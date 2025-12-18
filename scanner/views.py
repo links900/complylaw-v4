@@ -32,6 +32,8 @@ from django.utils.timezone import now
 
 
 
+
+
 def keep_alive(request):
     return HttpResponse("OK")  # Call this every 10min via cron or external ping
     
@@ -276,53 +278,52 @@ def generate_pdf(request, pk):
     pdf_file = io.BytesIO()
     html.write_pdf(pdf_file)
     '''
-    # Hash creation and store for verification
+   # === Generate PDF ONCE ===
     pdf_buffer = io.BytesIO()
     html.write_pdf(pdf_buffer)
-
     pdf_bytes = pdf_buffer.getvalue()
     pdf_buffer.close()
 
+    # === Hash FINAL PDF BYTES ===
     pdf_hash = calculate_sha256_bytes(pdf_bytes)
 
-    # === Save PDF to ComplianceReport for report view download ===
+    # === File name ===
     pdf_filename = f"Compliance_Report_{scan.domain}_{scan.scan_id}.pdf"
-    pdf_content = ContentFile(pdf_bytes, name=pdf_filename)
 
-    report, created = ComplianceReport.objects.get_or_create(
+    # === Save PDF (single source of truth) ===
+    report, _ = ComplianceReport.objects.get_or_create(
         scan=scan,
-        defaults={'pdf_file': pdf_content, 'generated_at': now()}
+        defaults={'generated_at': now()}
     )
-    if not created:
-        # Update existing PDF
-        report.pdf_file.save(pdf_filename, pdf_content, save=True)
 
-    # === Save verification record for scanner verify page ===
-    report_verification, created = ReportVerification.objects.get_or_create(
-        report_id=scan.scan_id,  # unique field
+    # Always overwrite to guarantee integrity
+    report.pdf_file.save(
+        pdf_filename,
+        ContentFile(pdf_bytes),
+        save=True
+    )
+
+    # === Save VERIFICATION RECORD (hash only) ===
+    ReportVerification.objects.update_or_create(
+        report_id=scan.scan_id,
         defaults={
             'domain': scan.domain,
             'scan': scan,
             'generated_at': now(),
-            'pdf_file': pdf_content,
             'pdf_sha256': pdf_hash,
         }
     )
 
+    # === Serve EXACT stored file ===
+    report.pdf_file.open('rb')
 
-
-    # === Serve PDF and return reponse ===
-
-    response = HttpResponse(content_type='application/pdf')
-    response['Content-Disposition'] = f'attachment; filename="Compliance_Report_{scan.domain}_{scan.scan_id}.pdf"'
-    #response.write(pdf_file.getvalue())
-    response.write(pdf_bytes)
-
-    
-   # pdf_file.close()
+    response = HttpResponse(
+        report.pdf_file.read(),
+        content_type='application/pdf'
+    )
+    response['Content-Disposition'] = f'attachment; filename="{pdf_filename}"'
 
     return response
-
     
     
     
