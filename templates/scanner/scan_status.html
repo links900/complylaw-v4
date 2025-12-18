@@ -60,7 +60,14 @@
 				  </a>
 			</div>
 	
-
+			<button hx-get="{% url 'scanner:test_modal' %}" 
+                    hx-target="body" 
+                    hx-swap="beforeend"
+                    class="inline-flex items-center px-6 py-3 bg-amber-500 text-white font-medium rounded-lg hover:bg-amber-600 transition shadow">
+                🛠️ Test Modal Design
+            </button>
+			
+			
             <!-- HTMX + WebSocket container : hx-trigger="revealed"-->
             <div id="scan-progress"
                  hx-get="{% url 'scanner:scan_status_partial' scan.id %}"

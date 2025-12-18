@@ -27,4 +27,12 @@ urlpatterns = [
     # Actions
     path('scan/<int:pk>/cancel/', views.CancelScanView.as_view(), name='cancel'),
     path('scan/<int:pk>/retry/', views.RetryScanView.as_view(), name='retry'),
+    
+    
+    
+    
+    
+    path('test-modal/', views.test_modal_view, name='test_modal'),
+    
+    
 ]

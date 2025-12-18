@@ -1,21 +1,27 @@
-<div id="checklist-modal" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 backdrop-blur-sm">
-    <div class="bg-white rounded-3xl p-8 max-w-md w-full shadow-2xl border border-slate-100 animate-in fade-in zoom-in duration-300">
-        <div class="w-16 h-16 bg-indigo-100 rounded-full flex items-center justify-center mb-6">
-            <svg class="w-8 h-8 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
-            </svg>
-        </div>
-        
-        <h3 class="text-2xl font-bold text-slate-900 mb-2">Technical Scan Complete!</h3>
-        <p class="text-slate-500 mb-8">To generate your full Compliance Report, please complete the mandatory Manual Audit checklist.</p>
-        
-        <div class="flex flex-col gap-3">
-            <a href="{% url 'checklists:start_checklist' %}" class="w-full py-4 bg-indigo-600 text-white rounded-xl font-bold text-center hover:bg-indigo-700 transition-all">
-                Complete Checklist Now
-            </a>
-            <button onclick="document.getElementById('checklist-modal').remove()" class="w-full py-3 text-slate-400 text-sm font-medium hover:text-slate-600 transition-colors">
-                I'll do it later
-            </button>
+<div id="checklist-modal" class="fixed inset-0 z-[9999] flex items-center justify-center overflow-y-auto overflow-x-hidden" style="background-color: rgba(15, 23, 42, 0.7); backdrop-filter: blur(4px);">
+    <div class="relative p-4 w-full max-w-md h-full md:h-auto flex items-center justify-center">
+        <div class="relative bg-white rounded-3xl shadow-2xl p-8 border border-gray-100 text-center animate-in fade-in zoom-in duration-300">
+            
+            <div class="mx-auto flex items-center justify-center h-16 w-16 rounded-full bg-indigo-100 mb-6">
+                <svg class="h-8 w-8 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
+                </svg>
+            </div>
+
+            <h3 class="mb-2 text-2xl font-bold text-gray-900">Scan Complete!</h3>
+            <p class="mb-8 text-gray-500">
+				As a <span class="font-bold text-indigo-600">{{ request.user.firm.subscription_tier|default:"Premium" }}</span> member, 
+				please complete the mandatory manual review to finalize your compliance score.
+			</p>
+            
+            <div class="space-y-3">
+                <a href="{% url 'checklists:wizard' scan_id=scan.id %}" class="block w-full px-5 py-4 text-sm font-bold text-white bg-indigo-600 rounded-xl hover:bg-indigo-700 shadow-lg shadow-indigo-200 transition-all">
+                    Start Manual Review
+                </a>
+                <button type="button" onclick="document.getElementById('checklist-modal').classList.add('hidden')" class="block w-full px-5 py-3 text-sm font-medium text-gray-400 hover:text-gray-600 transition-colors">
+                    Review Technical Findings First
+                </button>
+            </div>
         </div>
     </div>
 </div>

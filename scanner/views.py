@@ -31,7 +31,13 @@ from django.utils.timezone import now
 
 
 
-
+# Temporary view for testing the modal appearance
+def test_modal_view(request):
+    # This ignores the tier check so you can see the design immediately
+    return render(request, 'scanner/partials/checklist_prompt.html', {
+        'scan': {'domain': 'test-domain.com', 'id': 1},
+        'debug_mode': True
+    })
 
 
 def keep_alive(request):
@@ -155,7 +161,6 @@ class ScanStatusView(LoginRequiredMixin, DetailView):
         return context
 
 # === HTMX PARTIAL: Progress Update ===
-# === HTMX PARTIAL: Progress Update ===
 def scan_status_partial(request, pk):
     scan = get_object_or_404(ScanResult, pk=pk, firm=request.user.firm)
     
@@ -164,23 +169,18 @@ def scan_status_partial(request, pk):
         'active_statuses': ('RUNNING', 'PENDING'),
     }
     
-    html = render_to_string('scanner/partials/scan_progress.html', context)
+    html = render_to_string('scanner/partials/scan_progress.html', context, request=request)
     
     if scan.status == 'COMPLETED':
-        # 1. Standard Cleanup
-        html += '<script>htmx.remove(htmx.find("#scan-progress"))</script>'
-        messages.success(request, f"Scan completed.", extra_tags="scan_complete")
-        
-        # 2. Check for Pro/Enterprise Users
-        # Ensure 'tier' matches the field name in your Firm or Profile model
         user_firm = request.user.firm
-        if hasattr(user_firm, 'tier') and user_firm.tier.upper() in ['PRO', 'ENTERPRISE']:
-            # Append a special prompt modal or banner
-            prompt_context = {'scan': scan}
-            html += render_to_string('scanner/partials/checklist_prompt.html', prompt_context)
+        # FIX: Use 'subscription_tier' instead of 'tier'
+        user_tier = getattr(user_firm, 'subscription_tier', '').upper()
+        
+        if user_tier in ['PRO', 'ENTERPRISE']:
+            html += render_to_string('scanner/partials/checklist_prompt.html', {'scan': scan}, request=request)
     
     return HttpResponse(html)
-
+    
 
 # === CANCEL SCAN ===
 class CancelScanView(LoginRequiredMixin, View):
