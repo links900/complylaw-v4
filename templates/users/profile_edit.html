@@ -1,0 +1,79 @@
+<!-- templates/users/profile_edit.html — FINAL & BULLETPROOF -->
+{% extends "base.html" %}
+{% load static %}
+{% load form_tags %}
+{% block title %}Edit Profile – ComplyLaw{% endblock %}
+
+{% block content %}
+<div class="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 py-10 px-4">
+  <div class="max-w-3xl mx-auto">
+    <div class="bg-white rounded-xl shadow-xl overflow-hidden">
+
+      <div class="bg-gradient-to-r from-indigo-600 to-purple-600 px-8 py-7 text-center">
+        <h1 class="text-3xl font-bold text-white">Edit Profile</h1>
+        <p class="text-indigo-100 mt-2 text-base">Update your name</p>
+      </div>
+
+      <div class="p-8">
+        {% if messages %}
+          {% for message in messages %}
+            <div class="mb-6 p-4 rounded-lg text-center font-medium text-sm border
+              {% if message.tags == 'success' %}bg-green-50 text-green-800 border-green-200
+              {% elif message.tags == 'error' %}bg-red-50 text-red-700 border-red-200{% endif %}">
+              {{ message }}
+            </div>
+          {% endfor %}
+        {% endif %}
+
+        <form method="post" class="space-y-8">
+          {% csrf_token %}
+
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div>
+			  <label class="block text-sm font-semibold text-gray-700 mb-2">First Name</label>
+			  {{ form.first_name|add_class:"w-full px-4 py-2 border border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-indigo-400 focus:outline-none" }}
+			</div>
+			<div>
+			  <label class="block text-sm font-semibold text-gray-700 mb-2">Last Name</label>
+			  {{ form.last_name|add_class:"w-full px-4 py-2 border border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-indigo-400 focus:outline-none" }}
+			</div>
+
+          </div>
+
+          <div class="bg-gradient-to-r from-purple-50 to-indigo-50 p-7 rounded-xl border border-purple-200">
+            <h3 class="text-xl font-bold text-gray-800 text-center mb-6">Account Details</h3>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 text-center">
+              <div class="bg-white p-5 rounded-lg shadow-sm">
+                <p class="text-xs uppercase tracking-wider text-gray-600 mb-1">Email Address</p>
+                <p class="text-base font-semibold text-indigo-700 break-all">{{ user.email }}</p>
+                <p class="text-xs text-gray-500 mt-1">Cannot be changed here</p>
+              </div>
+              <div class="bg-white p-5 rounded-lg shadow-sm">
+                <p class="text-xs uppercase tracking-wider text-gray-600 mb-1">Role</p>
+                <p class="text-lg font-bold text-purple-700">
+                  {% if user.role == 'owner' %}Owner{% else %}Viewer{% endif %}
+                </p>
+              </div>
+              <div class="bg-white p-5 rounded-lg shadow-sm">
+                <p class="text-xs uppercase tracking-wider text-gray-600 mb-1">Joined</p>
+                <p class="text-base font-semibold text-green-700">
+                  {{ user.date_joined|date:"M d, Y" }}
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div class="pt-8 border-t border-gray-200 flex justify-between items-center">
+            <a href="{% url 'users:profile' %}" class="text-indigo-600 hover:text-indigo-800 font-medium">
+              ← Back
+            </a>
+            <button type="submit" class="px-8 py-3 bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-bold text-base rounded-lg hover:from-indigo-700 hover:to-purple-700 transition shadow">
+              Save Changes
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

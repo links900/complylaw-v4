@@ -1,0 +1,32 @@
+{% extends "account/base_account.html" %}
+{% block title %}Check Your Email{% endblock %}
+
+{% block content %}
+<div class="text-center">
+  <div class="w-20 h-20 mx-auto mb-6 bg-yellow-100 rounded-full flex items-center justify-center">
+    <svg class="w-12 h-12 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
+    </svg>
+  </div>
+
+  <h2 class="text-3xl font-bold text-gray-900 mb-4">Check your inbox</h2>
+  <p class="text-lg text-gray-600 mb-8">
+    We’ve sent a confirmation link to<br>
+    <span class="font-semibold text-indigo-600">{{ email }}</span>
+  </p>
+
+  <div class="bg-gray-50 rounded-lg p-6 text-left text-sm text-gray-600 space-y-3">
+    <p>Can’t find the email?</p>
+    <ul class="list-disc pl-5 space-y-1">
+      <li>Check your spam/promotions folder</li>
+      <li>Wait up to 2 minutes</li>
+      <li>Add <strong>no-reply@complylaw.com</strong> to your contacts</li>
+    </ul>
+  </div>
+
+  <a href="{% url 'account_email' %}"
+     class="mt-8 inline-block w-full bg-indigo-600 text-white font-bold text-lg py-4 rounded-lg hover:bg-indigo-700 transition">
+    Resend Confirmation Email
+  </a>
+</div>
+{% endblock %}

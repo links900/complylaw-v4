@@ -1,0 +1,53 @@
+<!-- templates/scanner/partials/scan_progress.html -->
+<!-- Progress Bar -->
+<div class="mb-8">
+    <div class="flex justify-between text-sm text-gray-600 mb-2">
+        <span id="step-name">
+            {% if scan.status == 'pending' %}Initializing...
+            {% elif scan.status == 'running' %}Scanning {{ scan.domain }}...
+            {% elif scan.status == 'complete' %}Scan Complete
+            {% else %}Waiting...{% endif %}
+        </span>
+        <span id="progress-percent">{{ scan.progress }}%</span>
+    </div>
+    <div class="w-full bg-gray-200 rounded-full h-4">
+        <div id="progress-bar" 
+             class="bg-blue-600 h-4 rounded-full transition-all duration-500" 
+             style="width: {{ scan.progress }}%"></div>
+    </div>
+</div>
+
+<!-- Live Log -->
+<div id="log-container" class="bg-gray-50 p-4 rounded h-48 overflow-y-auto font-mono text-sm mb-6">
+    {% for line in scan.scan_log.splitlines %}
+        <p>{{ line }}</p>
+    {% empty %}
+        <p class="text-gray-500">Connecting to scanner...</p>
+    {% endfor %}
+</div>
+
+<!-- Final Result -->
+<div id="result-container" class="mt-6 {% if scan.status != 'complete' %}hidden{% endif %}">
+    <div class="text-center">
+        <p class="text-6xl font-bold text-green-600" id="final-grade">
+            {{ scan.grade|default:"—" }}
+        </p>
+        <p class="text-lg text-gray-600 mt-2">
+            Risk Score: 
+            <span id="final-score">
+                {{ scan.risk_score|floatformat:1|default:"0.0" }}
+            </span>%
+        </p>
+        <div class="mt-6 space-x-4">
+            <a href="{% url 'scanner:pdf' scan.id %}" 
+               id="download-report" 
+               class="inline-block bg-green-600 text-white px-6 py-3 rounded-lg hover:bg-green-700 transition">
+                Download PDF Report
+            </a>
+            <a href="{% url 'scanner:scan_list' %}" 
+               class="inline-block text-blue-600 hover:underline">
+                Back to Scans
+            </a>
+        </div>
+    </div>
+</div>

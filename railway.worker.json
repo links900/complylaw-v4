@@ -1,0 +1,3 @@
+{
+  "start": "celery -A core.celery worker --loglevel=info --concurrency=2"
+}

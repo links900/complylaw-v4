@@ -1,0 +1,216 @@
+<!-- templates/scanner/partials/scan_progress.html -->
+{% load humanize %}
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Scan Progress - ComplyLaw</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100">
+
+<div class="max-w-4xl mx-auto px-4 py-6">
+
+    <div id="scan-progress-container" class="bg-white shadow-lg rounded-2xl overflow-hidden">
+
+        <!-- Header -->
+        <div class="flex items-center justify-between px-6 py-4 border-b">
+            <div class="flex items-center gap-4">
+                <div class="w-12 h-12 flex items-center justify-center rounded-lg bg-gradient-to-br from-slate-50 to-slate-100">
+                    {% if scan.status == 'RUNNING' or scan.status == 'PENDING' %}
+                        <svg class="w-6 h-6 text-blue-600 animate-pulse" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6l4 2"/>
+                        </svg>
+                    {% elif scan.status == 'COMPLETED' %}
+                        <svg class="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                        </svg>
+                    {% elif scan.status == 'FAILED' %}
+                        <svg class="w-6 h-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                        </svg>
+                    {% else %}
+                        <svg class="w-6 h-6 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3"/>
+                        </svg>
+                    {% endif %}
+                </div>
+
+                <div>
+                    <h2 class="text-lg font-semibold text-slate-800">Compliance Scan</h2>
+                    <p class="text-sm text-slate-500">Domain: <span class="font-medium">{{ scan.domain }}</span></p>
+                </div>
+            </div>
+
+            <div class="flex items-center gap-3">
+                <p class="text-sm text-slate-600">Status:
+                    <span class="ml-2 inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-slate-100 text-slate-800">
+                        {{ scan.status }}
+                    </span>
+                </p>
+                {% if scan.status == "RUNNING" or scan.status == "PENDING" or  scan.status in active_statuses %}
+
+
+                    <button onclick="location.reload();" class="inline-flex items-center px-3 py-2 text-sm border rounded-md bg-white hover:bg-slate-50">
+                        Refresh
+                    </button>
+                {% endif %}
+            </div>
+			
+        </div>
+
+        <!-- Progress + Logs -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 p-6">
+
+            
+			<!-- Main Progress -->
+            <div class="md:col-span-2 bg-gradient-to-b from-slate-50 to-white border rounded-xl p-5">
+                <div class="flex items-center justify-between mb-4">
+                    <div>
+                        <h3 class="text-sm font-semibold text-slate-700">Scan Progress</h3>
+                        <p class="text-xs text-slate-500">
+                            Last step: <span id="current-step">{{ scan.scan_log.splitlines|last|default:"Scan Started..." }}</span>
+                        </p>
+                    </div>
+                </div>
+
+                <div class="w-full bg-slate-100 rounded-full h-4 overflow-hidden">
+                    <div id="scan-progress-bar-main" class="h-4 rounded-full transition-all ease-linear duration-500"
+                        style="width: {{ scan.progress|default:'10' }}%; background: linear-gradient(90deg, rgba(59,130,246,1) 0%, rgba(16,185,129,1) 100%);">
+                    </div>
+					 
+                </div>
+				<br><br><br><br><br>
+ 				<p class="text-xs text-slate-500 bg-slate-50 border border-slate-200 rounded-md p-3 mt-2">
+					<strong class="text-slate-600">Note:</strong>
+					The scan is running in the background. If the progress appears stalled, please refresh the page after a few seconds.
+					Once the scan is complete, the download button will automatically appear below.
+				</p>
+
+            </div>
+
+            <!-- Live Scan Log -->
+            <div class="md:col-span-1">
+                <div class="border rounded-xl h-full flex flex-col">
+                    <div class="px-4 py-3 border-b bg-slate-50">
+                        <h4 class="text-sm font-semibold text-slate-700">Live Scan Log</h4>
+                        <p class="text-xs text-slate-500">Auto-scrolling. Logs are truncated for performance.</p>
+                    </div>
+
+                    <div id="scan-log-wrapper" class="p-3 overflow-y-auto font-mono text-xs text-gray-700 h-64 bg-white">
+                        <ul id="scan-log" class="space-y-1">
+                            {% for line in scan.scan_log.splitlines %}
+                                <li>{{ line }}</li>
+                            {% empty %}
+                                <li class="text-gray-400">Establishing secure connection...</li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+
+                    <div class="px-3 py-2 border-t bg-slate-50 text-xs text-slate-600 flex items-center justify-between">
+                        <div>Lines: {{ scan.scan_log.splitlines|length }}</div>
+                        <div class="flex items-center gap-2">
+                            <button id="log-top" class="text-xs px-2 py-1 border rounded">Top</button>
+                            <button id="log-bottom" class="text-xs px-2 py-1 border rounded">Bottom</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- Completion Details -->
+        <div id="completion-details" class="p-6 pt-0 {% if scan.status == 'COMPLETED' %}flex{% else %}hidden{% endif %} items-center justify-between">
+            <div class="flex items-center gap-4">
+                <span id="grade-badge" class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium
+                    {% if scan.grade == 'A' %}bg-green-100 text-green-800
+                    {% elif scan.grade == 'B' %}bg-blue-100 text-blue-800
+                    {% elif scan.grade == 'C' %}bg-yellow-100 text-yellow-800
+                    {% elif scan.grade == 'D' %}bg-orange-100 text-orange-800
+                    {% else %}bg-red-100 text-red-800{% endif %}">
+                    Grade: {{ scan.grade|default:'—' }}
+                </span>
+                {% if scan.risk_score %}
+                    <span id="risk-score" class="text-sm text-slate-600">Risk: <span class="font-medium">{{ scan.risk_score|floatformat:0 }}%</span></span>
+                {% endif %}
+            </div>
+
+            <div class="flex justify-center items-center gap-2 mt-4">
+                <a href="{% url 'scanner:pdf' scan.id %}" class="inline-flex items-center px-3 py-2 rounded-md bg-green-600 text-white text-sm font-medium hover:bg-green-700">
+                    Download PDF
+                </a>
+            </div>
+        </div>
+
+        <!-- Error -->
+        {% if scan.status == 'FAILED' %}
+            <div class="px-6 pb-6 pt-0 flex items-center justify-between text-red-700">
+                <div class="text-sm">{{ scan.error_message|default:'Unexpected error occurred.' }}</div>
+                <a href="{% url 'scanner:scan_list' %}" class="text-sm text-red-600">← Back to Scans</a>
+            </div>
+        {% endif %}
+
+    </div>
+</div>
+
+<!-- WebSocket JS -->
+<script>
+(function() {
+    const scanId = "{{ scan.id }}";
+    const logContainer = document.getElementById("scan-log");
+    const progressBarMain = document.getElementById("scan-progress-bar-main");
+    const currentStepSpan = document.getElementById("current-step");
+    const completionDetails = document.getElementById("completion-details");
+    const gradeBadge = document.getElementById("grade-badge");
+    const riskScore = document.getElementById("risk-score");
+
+    let lastProgress = Math.max({{ scan.progress|default:'10' }}, 10);
+
+    const wsScheme = window.location.protocol === "https:" ? "wss" : "ws";
+    const socket = new WebSocket(`${wsScheme}://${window.location.host}/ws/scan/${scanId}/`);
+	socket.onopen = () => console.log("WS connected");
+
+
+    socket.onmessage = function(event) {
+        const data = JSON.parse(event.data);
+        const progress = Math.max(data.progress || lastProgress, lastProgress);
+
+        if (data.type && data.type.toLowerCase() === "complete") {
+            addLogLine(`[COMPLETE] Grade: ${data.grade} | Risk: ${data.risk_score}%`, "text-green-700 font-semibold");
+            progressBarMain.style.width = "100%";
+            completionDetails.classList.remove('hidden');
+            completionDetails.classList.add('flex');
+
+            if (gradeBadge) gradeBadge.textContent = `Grade: ${data.grade}`;
+            if (riskScore) riskScore.innerHTML = `Risk: <span class="font-medium">${data.risk_score}%</span>`;
+
+            setTimeout(() => location.reload(), 1500);
+        } else {
+            const step = data.step || "Initializing";
+            const status = data.status || "pending";
+
+            if(currentStepSpan) currentStepSpan.textContent = step;
+            addLogLine(`[${progress}%] ${step} - Status: ${status.toUpperCase()}`);
+            progressBarMain.style.width = `${progress}%`;
+            lastProgress = progress;
+        }
+    };
+
+    socket.onclose = function() { addLogLine("[INFO] Connection closed.", "text-gray-500"); };
+
+    function addLogLine(text, colorClass="text-gray-700") {
+        const li = document.createElement("li");
+        li.textContent = text;
+        li.className = colorClass;
+        logContainer.appendChild(li);
+        document.getElementById("scan-log-wrapper").scrollTop = logContainer.scrollHeight;
+    }
+
+    document.getElementById("log-top").addEventListener("click", () => { document.getElementById("scan-log-wrapper").scrollTop = 0; });
+    document.getElementById("log-bottom").addEventListener("click", () => { document.getElementById("scan-log-wrapper").scrollTop = logContainer.scrollHeight; });
+})();
+</script>
+
+</body>
+</html>

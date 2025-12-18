@@ -1,0 +1,22 @@
+{% extends "account/base_account.html" %}
+{% block title %}Link Expired{% endblock %}
+
+{% block content %}
+<div class="text-center">
+  <div class="w-20 h-20 mx-auto mb-6 bg-red-100 rounded-full flex items-center justify-center">
+    <svg class="w-12 h-12 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.01 4A9 9 0 1112 3a9 9 0 010 18z"/>
+    </svg>
+  </div>
+
+  <h2 class="text-3xl font-bold text-gray-900 mb-4">Link Expired or Invalid</h2>
+  <p class="text-lg text-gray-600 mb-8">
+    Don't worry — we can send you a fresh one instantly.
+  </p>
+
+  <a href="{% url 'account_email' %}"
+     class="inline-block w-full bg-indigo-600 text-white font-bold text-lg py-4 rounded-lg hover:bg-indigo-700 transition shadow-lg">
+    Send New Confirmation Email
+  </a>
+</div>
+{% endblock %}

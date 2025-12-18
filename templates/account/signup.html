@@ -1,0 +1,44 @@
+{% extends "account/base_account.html" %}
+{% load i18n %}
+{% block title %}Sign Up{% endblock %}
+
+{% block content %}
+<h2 class="text-3xl font-bold text-center text-gray-900 mb-8">Create your account</h2>
+
+
+
+<form method="post" action="{% url 'account_signup' %}" class="space-y-6">
+  {% csrf_token %}
+  
+  <div>
+    <label class="block text-sm font-medium text-gray-700">Email Address</label>
+    <input type="email" name="email" required autocomplete="email"
+           class="mt-1 block w-full px-4 py-3 border border-gray-300 rounded-lg shadow-sm focus:ring-indigo-500 focus:border-indigo-500">
+    {% if form.email.errors %}<p class="mt-1 text-sm text-red-600">{{ form.email.errors|join:", " }}</p>{% endif %}
+  </div>
+
+  <div>
+    <label class="block text-sm font-medium text-gray-700">Password</label>
+    <input type="password" name="password1" required autocomplete="new-password"
+           class="mt-1 block w-full px-4 py-3 border border-gray-300 rounded-lg shadow-sm focus:ring-indigo-500 focus:border-indigo-500">
+    {% if form.password1.errors %}<p class="mt-1 text-sm text-red-600">{{ form.password1.errors|join:", " }}</p>{% endif %}
+  </div>
+
+  <div>
+    <label class="block text-sm font-medium text-gray-700">Confirm Password</label>
+    <input type="password" name="password2" required autocomplete="new-password"
+           class="mt-1 block w-full px-4 py-3 border border-gray-300 rounded-lg shadow-sm focus:ring-indigo-500 focus:border-indigo-500">
+    {% if form.password2.errors %}<p class="mt-1 text-sm text-red-600">{{ form.password2.errors|join:", " }}</p>{% endif %}
+  </div>
+
+  <button type="submit"
+          class="w-full bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-bold py-4 rounded-lg hover:from-indigo-700 hover:to-purple-700 transition shadow-lg transform hover:scale-105">
+    Create Account
+  </button>
+</form>
+
+<div class="mt-6 text-center text-sm text-gray-600">
+  Already have an account?
+  <a href="{% url 'account_login' %}" class="font-medium text-indigo-600 hover:underline">Sign in here</a>
+</div>
+{% endblock %}

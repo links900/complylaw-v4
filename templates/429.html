@@ -1,0 +1,92 @@
+<!-- templates/429.html -->
+{% extends "base.html" %}
+
+{% block title %}429 - Too Many Requests - ComplyLaw{% endblock %}
+
+{% block content %}
+<div class="min-h-screen flex items-center justify-center bg-gray-50 px-4">
+    <div class="max-w-md w-full text-center py-12">
+        <!-- Big 429 -->
+        <h1 class="text-8xl font-extrabold text-red-600 tracking-tight">429</h1>
+        
+        <!-- Main message -->
+        <p class="text-2xl font-semibold text-gray-800 mt-6">Too Many Requests</p>
+        <p class="text-lg text-gray-600 mt-3">
+            You've exceeded the rate limit of <strong>3 scans per minute</strong>.
+        </p>
+        <p class="text-gray-500 mt-2">
+            Please wait a moment and try again.
+        </p>
+
+        <!-- Action buttons -->
+        <div class="mt-8 flex flex-col sm:flex-row gap-4 justify-center">
+            {% url 'scanner:scan_list' as scan_list_url %}
+            {% if scan_list_url %}
+                <a href="{{ scan_list_url }}"
+                   class="inline-flex items-center justify-center px-6 py-3 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition">
+                    Back to My Scans
+                </a>
+            {% else %}
+                <a href="/scanner/"
+                   class="inline-flex items-center justify-center px-6 py-3 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition">
+                    Back to My Scans
+                </a>
+            {% endif %}
+
+            <a href="/"
+               class="inline-flex items-center justify-center px-6 py-3 border border-gray-300 text-gray-700 font-medium rounded-lg hover:bg-gray-100 transition">
+                Go Home
+            </a>
+        </div>
+
+        <!-- Optional retry info -->
+        <p class="text-sm text-gray-500 mt-8">
+            This limit resets automatically. No action needed.
+        </p>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // Enhanced HTMX handling for 429 responses (in-page partial updates)
+    document.body.addEventListener('htmx:afterRequest', function(evt) {
+        if (evt.detail.xhr.status === 429) {
+            const message = evt.detail.xhr.responseText || "Too many requests. Please wait before trying again.";
+
+            // Show toast notification
+            const toast = document.createElement('div');
+            toast.className = 'fixed bottom-5 right-5 max-w-sm bg-red-600 text-white px-6 py-4 rounded-lg shadow-2xl z-50 transform transition-all duration-300 translate-y-20 opacity-0';
+            toast.innerHTML = `
+                <div class="flex items-center">
+                    <svg class="w-6 h-6 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.94 4h13.88a1.88 1.88 0 001.88-1.88V8.12a1.88 1.88 0 00-1.88-1.88H5.94a1.88 1.88 0 00-1.88 1.88v10.76c0 1.04.84 1.88 1.88 1.88z"></path>
+                    </svg>
+                    <div>
+                        <p class="font-semibold">Rate Limit Exceeded</p>
+                        <p class="text-sm opacity-90">Please wait before running another scan.</p>
+                    </div>
+                </div>
+            `;
+            document.body.appendChild(toast);
+
+            // Animate in
+            setTimeout(() => {
+                toast.classList.remove('translate-y-20', 'opacity-0');
+            }, 10);
+
+            // Remove after 5 seconds
+            setTimeout(() => {
+                toast.classList.add('translate-y-20', 'opacity-0');
+                setTimeout(() => toast.remove(), 300);
+            }, 5000);
+
+            // Close any open modals
+            setTimeout(() => {
+                const modal = document.getElementById('scanModal') || document.querySelector('[hx-target="this"]');
+                if (modal) modal.remove();
+            }, 300);
+        }
+    });
+</script>
+{% endblock %}

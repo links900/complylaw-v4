@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Pricing - ComplyLaw</title>
+  <style>
+    body { font-family: system-ui, sans-serif; text-align: center; padding: 50px; background: #f8f9fa; }
+    .card { max-width: 420px; margin: 40px auto; padding: 40px; background: white; border-radius: 16px; box-shadow: 0 20px 40px rgba(0,0,0,0.1); }
+    .popular { background: #000; color: white; padding: 8px 16px; border-radius: 99px; font-size: 12px; }
+    h2 { font-size: 42px; margin: 20px 0 10px; }
+    h3 { font-size: 48px; margin: 0; }
+    h3 span { font-size: 20px; color: #666; }
+    ul { text-align: left; margin: 30px 0; }
+    li { margin: 12px 0; font-size: 18px; }
+    input[type="email"] { width: 100%; padding: 16px; margin: 20px 0; border: 1px solid #ddd; border-radius: 8px; font-size: 16px; }
+    button { width: 100%; padding: 18px; background: #000; color: white; border: none; border-radius: 8px; font-size: 20px; cursor: pointer; }
+    button:hover { background: #333; }
+    small { color: #666; margin-top: 20px; display: block; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <div class="popular">MOST POPULAR</div>
+    <h2>Professional</h2>
+    <h3>$499<span>/month</span></h3>
+    <ul>
+		<li>Daily Scans</li>
+			<li>GDPR + ISO 27001 + OWASP + PCI DSS + CCPA + SOC 2</li>
+          
+            <li>Beautiful branded PDF reports</li>
+			<li>Recurring Tasks</li>
+		    <li>Priority Support</li>
+			
+    </ul>
+    <form action="/billing/create-checkout/" method="POST">
+      {% csrf_token %}
+      <input type="hidden" name="plan" value="pro">
+      <input type="email" name="email" placeholder="you@company.com" required>
+      <button type="submit">Start 14-Day Free Trial →</button>
+    </form>
+    <small>No credit card required • Cancel anytime</small>
+  </div>
+</body>
+</html>

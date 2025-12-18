@@ -1,0 +1,78 @@
+<!-- templates/scanner/partials/run_scan_modal.html -->
+<div id="scanModal" class="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+    <div class="bg-white rounded-lg shadow-xl max-w-md w-full p-6">
+        <div class="flex justify-between items-center mb-4">
+            <h2 class="text-xl font-bold text-gray-800">Start Compliance Scan</h2>
+            <button hx-get="{% url 'scanner:scan_list' %}"
+                    hx-target="#scanModal"
+                    hx-swap="outerHTML"
+                    class="text-gray-400 hover:text-gray-600">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                </svg>
+            </button>
+        </div>
+
+        <p class="text-gray-600 mb-4">Enter your firm's domain to scan for compliance.This will scan your firm's website for GDPR, CCPA, and cyber security compliance...</p>
+
+        <div class="bg-blue-50 border border-blue-200 rounded p-3 text-sm text-blue-800 mb-4">
+            <strong>Rate Limit:</strong> 3 scans per hour
+        </div>
+		
+        <div id="rate-limit-msg" class="text-sm text-red-600 mb-4 h-5"></div>
+
+        <form hx-post="{% url 'scanner:run_scan' %}"
+              #hx-target="#scan-list-table"
+			  hx-target="#modal"
+              hx-swap="outerHTML"
+              hx-indicator="#scan-spinner"
+              class="space-y-4">
+            {% csrf_token %}
+            <!-- <input type="text" name="domain" placeholder={{ user.firm.domain }} required
+                   class="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500">
+			-->
+				   
+			<input type="text" name="domain" value="{{ user.firm.domain }}"  readonly class="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500" />
+            <button type="submit"
+                    class="w-full bg-blue-600 text-white py-3 rounded-lg font-medium hover:bg-blue-700 flex items-center justify-center">
+                <span id="scan-spinner" class="htmx-indicator">
+                    <svg class="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                </span>
+                Start Scan
+            </button>
+        </form>
+    </div>
+</div>
+
+<!-- HTMX: Handle HX-Location redirect -->
+<script>
+document.body.addEventListener('htmx:afterSwap', function(evt) {
+    if (evt.detail.target.id === 'scan-list-table') {
+        const location = evt.detail.xhr.getResponseHeader('HX-Location');
+        if (location) {
+            // Close modal
+            document.getElementById('scanModal').innerHTML = '';
+            // Navigate to scan status
+            window.location = location;
+        }
+    }
+});
+</script>
+
+<!-- 429 ERROR -->
+<script>
+document.body.addEventListener('htmx:afterOnLoad', function(evt) {
+    if (evt.detail.xhr.status === 429) {
+        const msg = "Too many scans. Please wait 1 hour.";
+        document.getElementById('rate-limit-msg').innerHTML = `<span class="text-red-600">${msg}</span>`;
+        const toast = document.createElement('div');
+        toast.innerText = msg;
+        toast.className = 'fixed bottom-4 right-4 px-6 py-3 bg-red-600 text-white rounded-lg shadow-lg z-50';
+        document.body.appendChild(toast);
+        setTimeout(() => toast.remove(), 4000);
+    }
+});
+</script>

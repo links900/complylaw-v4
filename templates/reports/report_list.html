@@ -1,0 +1,105 @@
+<!-- templates/reports/reports_list.html — GORGEOUS & PROFESSIONAL -->
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Compliance Reports – ComplyLaw{% endblock %}
+
+{% block content %}
+<div class="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 py-10 px-4">
+  <div class="max-w-7xl mx-auto">
+
+    <!-- Page Header -->
+    <div class="text-center mb-12">
+      <h1 class="text-4xl font-bold text-indigo-700">Compliance Reports</h1>
+      <p class="mt-3 text-lg text-gray-600">All your generated compliance reports in one place</p>
+    </div>
+
+    <!-- Back Button -->
+    <div class="mb-8 text-center">
+      <a href="{% url 'scanner:scan_list' %}" 
+         class="inline-flex items-center px-6 py-3 bg-indigo-600 text-white font-medium rounded-lg hover:bg-indigo-700 transition shadow">
+        Back to Scanner
+      </a>
+	  
+	  <a href="{% url 'reports:verify_report' %}" 
+         class="inline-flex items-center px-6 py-3 bg-indigo-600 text-white font-medium rounded-lg hover:bg-indigo-700 transition shadow">
+        Verify Report
+      </a>
+	  
+	  
+    </div>
+
+    <!-- Reports Grid -->
+    {% if reports %}
+      <div class="grid gap-8 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+        {% for report in reports %}
+          <div class="bg-white rounded-xl shadow-lg overflow-hidden hover:shadow-2xl transition transform hover:-translate-y-1">
+            
+            <!-- Header with Domain & Grade -->
+            <div class="bg-gradient-to-r from-indigo-600 to-purple-600 px-6 py-5 text-white">
+              <h3 class="text-xl font-bold truncate">{{ report.scan.domain }}</h3>
+              <div class="flex items-center gap-3 mt-2">
+                <span class="text-3xl font-extrabold">
+                  {{ report.scan.grade|default:"—" }}
+                </span>
+                <span class="text-sm opacity-90">
+                  Risk: <strong>{{ report.scan.risk_score|floatformat:1 }}%</strong>
+                </span>
+              </div>
+            </div>
+
+            <!-- Body -->
+            <div class="p-6">
+              <div class="space-y-3 text-sm">
+                <p class="text-gray-600">
+                  <span class="font-medium">Scan ID:</span>
+                  <code class="ml-2 bg-gray-100 text-gray-800 px-2 py-1 rounded text-xs font-mono">
+                    {{ report.scan.scan_id|slice:":12" }}
+                  </code>
+                </p>
+                <p class="text-gray-500 text-xs">
+                  Generated on {{ report.generated_at|date:"F j, Y \a\t g:i A" }}
+                </p>
+              </div>
+
+              <!-- Actions -->
+              <div class="mt-6 flex gap-3">
+                <a href="{% url 'reports:report_detail' report.pk %}"
+                   class="flex-1 text-center bg-indigo-600 text-white py-2.5 px-4 rounded-lg font-medium text-sm hover:bg-indigo-700 transition">
+                  View Report
+                </a>
+                {% if report.pdf_file %}
+                  <a href="{% url 'reports:report_download' report.pk %}"
+                     class="flex-1 text-center bg-green-600 text-white py-2.5 px-4 rounded-lg font-medium text-sm hover:bg-green-700 transition">
+                    Download PDF
+                  </a>
+                {% else %}
+                  <span class="flex-1 text-center bg-gray-200 text-gray-500 py-2.5 px-4 rounded-lg text-sm font-medium">
+                    Generating PDF...
+                  </span>
+                {% endif %}
+              </div>
+            </div>
+          </div>
+        {% endfor %}
+      </div>
+
+    {% else %}
+      <!-- No Reports State -->
+      <div class="text-center py-20">
+        <div class="bg-white rounded-2xl shadow-xl p-12 max-w-md mx-auto">
+          <div class="text-6xl mb-6">No reports yet</div>
+          <p class="text-xl text-gray-600 mb-8">
+            Run a compliance scan to generate your first report
+          </p>
+          <a href="{% url 'scanner:scan_list' %}"
+             class="inline-flex items-center px-8 py-4 bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-bold text-lg rounded-xl hover:from-indigo-700 hover:to-purple-700 transition transform hover:scale-105 shadow-xl">
+            Run Your First Scan
+          </a>
+        </div>
+      </div>
+    {% endif %}
+
+  </div>
+</div>
+{% endblock %}

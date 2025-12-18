@@ -1,0 +1,273 @@
+<!-- templates/users/profile.html — BEAUTIFUL & PERFECTLY SIZED -->
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Profile – ComplyLaw{% endblock %}
+
+{% block content %}
+<div class="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 py-10 px-4">
+  <div class="max-w-4xl mx-auto">
+
+    <!-- Header -->
+    <div class="text-center mb-10">
+      <h1 class="text-4xl font-bold text-indigo-700">Your Profile</h1>
+      <p class="mt-2 text-lg text-gray-600">Account and firm information</p>
+    </div>
+
+    <!-- Personal Profile Card -->
+    <div class="bg-white rounded-xl shadow-xl overflow-hidden mb-8">
+      <div class="bg-gradient-to-r from-indigo-600 to-purple-600 px-8 py-6 text-center">
+        {% if firm and firm.logo %}
+		  <img src="{{ firm.logo.url }}" alt="{{ firm.firm_name }} logo" 
+			   class="w-32 h-32 mx-auto object-contain rounded-full shadow-2xl border-4 border-white">
+		{% else %}
+		  <div class="w-32 h-32 mx-auto bg-white rounded-full shadow-2xl flex items-center justify-center text-5xl font-bold text-indigo-600 border-4 border-white">
+			{{ user.first_name|slice:":1"|upper }}{{ user.last_name|slice:":1"|upper }}
+		  </div>
+		{% endif %}
+
+		<h2 class="mt-4 text-2xl font-bold text-white">{{ user.get_full_name|default:user.email }}</h2>
+		
+		{# FIX: Access firm_name safely #}
+		<p class="text-indigo-100">
+		  {{ user.get_role_display }} at 
+		  {% if firm %}{{ firm.firm_name }}{% else %}ComplyLaw{% endif %}
+		</p>
+      <!-- </div> -->
+
+      <div class="p-8">
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 text-center">
+          <div class="bg-gray-50 p-5 rounded-lg">
+            <p class="text-xs uppercase tracking-wider text-gray-600 mb-1">Email</p>
+            <p class="text-lg font-semibold text-indigo-700 break-all">{{ user.email }}</p>
+          </div>
+          <div class="bg-gray-50 p-5 rounded-lg">
+            <p class="text-xs uppercase tracking-wider text-gray-600 mb-1">Role</p>
+            <p class="text-xl font-bold text-purple-700">
+              {% if user.role == 'owner' %}Firm Owner{% else %}Viewer{% endif %}
+            </p>
+          </div>
+          <div class="bg-gray-50 p-5 rounded-lg">
+            <p class="text-xs uppercase tracking-wider text-gray-600 mb-1">Joined</p>
+            <p class="text-lg font-semibold text-green-700">{{ user.date_joined|date:"M d, Y" }}</p>
+          </div>
+        </div>
+
+        <div class="mt-8 text-center">
+          <a href="{% url 'users:profile_edit' %}" 
+             class="inline-flex items-center px-6 py-3 bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-semibold rounded-lg hover:from-indigo-700 hover:to-purple-700 transition shadow">
+            Edit Profile
+          </a>
+        </div>
+      </div>
+    </div>
+
+     <!-- Security Settings Card  -->
+    <div class="bg-white rounded-xl shadow-xl overflow-hidden mb-8">
+      <div class="bg-gradient-to-r from-teal-500 to-cyan-600 px-8 py-5">
+                                                                                                                                           
+                                                                                     
+              
+        <h2 class="text-2xl font-bold text-white text-center">Security Settings</h2>
+                                                                                                                   
+      </div>
+
+      <div class="p-8">
+        <div class="flex flex-col md:flex-row justify-between items-center bg-gray-50 p-6 rounded-lg border border-gray-200">
+                                                 
+                                                                                    
+          <div class="text-lg font-semibold text-gray-800">
+            Change Password
+            <p class="text-sm text-gray-500 font-normal mt-1">Update your account password for enhanced security.</p>
+                                                                                   
+                                                         
+                                                                                
+                
+                
+                                                 
+                                                                                     
+                                                                                                    
+          </div>
+          <!-- Button to trigger the modal -->
+          <button id="openChangePasswordModal"
+                                      
+                                                   
+              class="mt-4 md:mt-0 px-6 py-3 bg-teal-500 text-white font-semibold rounded-lg hover:bg-teal-600 transition shadow-md">
+            Change Password
+          </button>
+        </div>
+      </div>
+    </div>
+	
+	<!-- Firm Card -->
+    <div class="bg-white rounded-xl shadow-xl overflow-hidden">
+      <div class="bg-gradient-to-r from-purple-600 to-pink-600 px-8 py-5">
+        <h2 class="text-2xl font-bold text-white text-center">Firm Information</h2>
+      </div>
+
+      <div class="p-8">
+        {% if firm %}
+          <div class="space-y-6">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div>
+                <p class="text-xs uppercase tracking-wider text-gray-600">Firm Name</p>
+                <p class="text-xl font-bold text-gray-800">{{ firm.firm_name }}</p>
+              </div>
+              <div>
+                <p class="text-xs uppercase tracking-wider text-gray-600">Domain</p>
+                <p class="text-xl font-semibold text-gray-800">{{ firm.domain }}</p>
+              </div>
+              <div>
+                <p class="text-xs uppercase tracking-wider text-gray-600">Phone</p>
+                <p class="text-lg font-medium text-gray-800">{{ firm.phone|default:"Not set" }}</p>
+              </div>
+              <div>
+                <p class="text-xs uppercase tracking-wider text-gray-600">Firm Email</p>
+                <p class="text-lg font-medium text-gray-800">{{ firm.email }}</p>
+              </div>
+            </div>
+
+            <div class="pt-4 border-t">
+              <p class="text-xs uppercase tracking-wider text-gray-600">Subscription Plan</p>
+              <p class="text-2xl font-bold text-green-600">
+                {{ firm.get_subscription_tier_display }}
+              </p>
+            </div>
+
+            {% if firm.logo %}
+              <div class="text-center pt-4">
+                <img src="{{ firm.logo.url }}" alt="Logo" class="mx-auto h-20 rounded-lg shadow">
+              </div>
+            {% endif %}
+
+            <div class="text-center pt-6">
+              <a href="{% url 'users:firm_settings' %}" 
+                 class="inline-flex items-center px-7 py-3 bg-gradient-to-r from-purple-600 to-pink-600 text-white font-semibold rounded-lg hover:from-purple-700 hover:to-pink-700 transition shadow">
+                Edit Firm Settings
+              </a>
+            </div>
+          </div>
+
+        {% else %}
+          <div class="text-center py-12">
+            <div class="bg-yellow-50 border-2 border-yellow-400 rounded-lg p-8 max-w-md mx-auto">
+              <p class="text-xl font-bold text-yellow-800 mb-3">No Firm Associated</p>
+              <p class="text-gray-700 mb-6">Set up your firm to get started</p>
+              <a href="{% url 'users:firm_wizard' %}" 
+                 class="inline-block px-7 py-3 bg-gradient-to-r from-yellow-500 to-orange-500 text-white font-bold rounded-lg hover:from-yellow-600 hover:to-orange-600 transition shadow">
+                Set Up Firm
+              </a>
+            </div>
+          </div>
+        {% endif %}
+      </div>
+    </div>
+
+  </div>
+</div>
+
+
+
+<!-- Change Password Modal Structure -->
+<div id="changePasswordModal" class="fixed inset-0 bg-black bg-opacity-60 hidden items-center justify-center z-50 transition-opacity duration-300">
+    <!-- Modal Content -->
+    <div class="bg-white rounded-xl shadow-2xl w-full max-w-lg mx-4 transform transition-all duration-300 scale-95 opacity-0" id="modalContent">
+        
+        <!-- Modal Header -->
+        <div class="flex justify-between items-center p-6 border-b border-gray-100 bg-indigo-50 rounded-t-xl">
+            <h3 class="text-2xl font-bold text-indigo-700">Update Your Password</h3>
+            <button id="closeChangePasswordModal" class="text-gray-400 hover:text-indigo-600 transition">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+            </button>
+        </div>
+        
+        <!-- Modal Body -->
+        <div class="p-6">
+            <div class="flex items-start space-x-4 p-4 bg-yellow-50 rounded-lg border border-yellow-200 mb-6">
+                <svg class="w-6 h-6 text-yellow-500 mt-1 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
+                <p class="text-gray-700 text-sm">
+                    For security purposes, you will be redirected to the full change password page. After successfully changing your password, you will be automatically logged out and required to sign in again.
+                </p>
+            </div>
+            
+            <div class="text-center">
+                <!-- Action button linking to the allauth change password page. Assuming URL name 'account_change_password' -->
+                <a href="{% url 'account_change_password' %}"
+                    class="inline-flex items-center justify-center w-full px-6 py-3 bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-bold text-lg rounded-lg hover:from-indigo-700 hover:to-purple-700 transition shadow-lg transform hover:scale-[1.01]">
+                    <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-4a2 2 0 00-2-2H6a2 2 0 00-2 2v4a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v3h8z"></path></svg>
+                    Go to Secure Password Form
+                </a>
+            </div>
+        </div>
+
+        <!-- Modal Footer -->
+        <div class="p-4 border-t border-gray-100 text-xs text-gray-500 text-center rounded-b-xl bg-gray-50">
+            Ensure you choose a strong, unique password.
+        </div>
+    </div>
+</div>
+
+
+
+
+<script>
+    // Simple JavaScript to handle modal visibility and animations
+    document.addEventListener('DOMContentLoaded', function () {
+        const modal = document.getElementById('changePasswordModal');
+        const modalContent = document.getElementById('modalContent');
+        const openBtn = document.getElementById('openChangePasswordModal');
+        const closeBtn = document.getElementById('closeChangePasswordModal');
+
+        function showModal() {
+            // Display and fade in backdrop
+            modal.classList.remove('hidden');
+            modal.classList.add('flex', 'opacity-0');
+            
+            // Wait a tick for reflow, then apply transition classes
+            setTimeout(() => {
+                modal.classList.add('opacity-100');
+                // Animate content scale and opacity
+                modalContent.classList.remove('scale-95', 'opacity-0');
+                modalContent.classList.add('scale-100', 'opacity-100');
+            }, 10);
+        }
+
+        function hideModal() {
+            // Animate content out
+            modalContent.classList.remove('scale-100', 'opacity-100');
+            modalContent.classList.add('scale-95', 'opacity-0');
+
+            // Fade out backdrop
+            modal.classList.remove('opacity-100');
+            
+            // Hide fully after transition (300ms defined in CSS)
+            setTimeout(() => {
+                modal.classList.remove('flex');
+                modal.classList.add('hidden');
+            }, 300);
+        }
+
+        // Event Listeners
+        if (openBtn && closeBtn && modal) {
+            openBtn.addEventListener('click', showModal);
+            closeBtn.addEventListener('click', hideModal);
+
+            // Close when clicking outside the modal content
+            modal.addEventListener('click', function (e) {
+                if (e.target === modal) {
+                    hideModal();
+                }
+            });
+
+            // Close with escape key
+            document.addEventListener('keydown', function (e) {
+                if (e.key === 'Escape' && modal.classList.contains('flex')) {
+                    hideModal();
+                }
+            });
+        }
+    });
+</script>
+
+
+{% endblock %}

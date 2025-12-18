@@ -1,0 +1,15 @@
+Hello from ComplyLaw!!!
+
+You're receiving this email because user {{ user_email }} has registered on {{ site.name }}.
+
+To confirm your account, click here: 
+
+
+{{ activate_url }}
+
+
+
+Thank you for using {{ site.name }}!
+
+Thanks,
+The ComplyLaw Team

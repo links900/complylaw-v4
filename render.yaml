@@ -1,0 +1,47 @@
+services:
+  - type: web
+    name: complylaw-web
+    env: python
+    buildCommand: ./render-build.sh
+    startCommand: gunicorn core.wsgi:application --bind 0.0.0.0:$PORT
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.11.7
+      - key: SECRET_KEY
+        generateValue: true
+      - key: DEBUG
+        value: false
+      - key: DATABASE_URL
+        fromDatabase:
+          name: complylaw-db
+          property: connectionString
+      - key: REDIS_URL
+        fromService:
+          name: complylaw-redis
+          property: connectionString
+
+  - type: worker
+    name: complylaw-celery
+    env: python
+    buildCommand: ./render-build.sh
+    startCommand: celery -A core worker -l info
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.11.7
+      - key: REDIS_URL
+        fromService:
+          name: complylaw-redis
+          property: connectionString
+      - key: DATABASE_URL
+        fromDatabase:
+          name: complylaw-db
+          property: connectionString
+
+databases:
+  - name: complylaw-db
+    plan: free
+
+redis:
+  - name: complylaw-redis
+    plan: free
+    ipAllowList: []

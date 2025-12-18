@@ -1,0 +1,41 @@
+{% extends "account/base_account.html" %}
+{% block title %}Sign In{% endblock %}
+
+{% block content %}
+<h2 class="text-3xl font-bold text-center text-gray-900 mb-8">Welcome back</h2>
+
+<form method="post" action="{% url 'account_login' %}" class="space-y-6">
+  {% csrf_token %}
+  {{ form.non_field_errors }}
+
+  <div>
+    <label class="block text-sm font-medium text-gray-700">Email</label>
+    <input type="email" name="login" required autocomplete="email" value="{{ form.login.value|default:'' }}"
+           class="mt-1 block w-full px-4 py-3 border border-gray-300 rounded-lg shadow-sm focus:ring-indigo-500 focus:border-indigo-500">
+  </div>
+
+  <div>
+    <label class="block text-sm font-medium text-gray-700">Password</label>
+    <input type="password" name="password" required autocomplete="current-password"
+           class="mt-1 block w-full px-4 py-3 border border-gray-300 rounded-lg shadow-sm focus:ring-indigo-500 focus:border-indigo-500">
+  </div>
+
+  <div class="flex items-center justify-between text-sm">
+    <label class="flex items-center">
+      <input type="checkbox" name="remember" class="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded">
+      <span class="ml-2 text-gray-600">Remember me</span>
+    </label>
+    <a href="{% url 'account_reset_password' %}" class="text-indigo-600 hover:underline">Forgot password?</a>
+  </div>
+
+  <button type="submit"
+          class="w-full bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-bold py-4 rounded-lg hover:from-indigo-700 hover:to-purple-700 transition shadow-lg transform hover:scale-105">
+    Sign In
+  </button>
+</form>
+
+<div class="mt-6 text-center text-sm text-gray-600">
+  Don’t have an account?
+  <a href="{% url 'account_signup' %}" class="font-medium text-indigo-600 hover:underline">Sign up free tiral</a>
+</div>
+{% endblock %}

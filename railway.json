@@ -1,0 +1,36 @@
+{
+  "build": {
+    "builder": "nixpacks",
+    "buildCommand": "pip install -r requirements.txt",
+    "nixpacksPlan": {
+      "phases": {
+        "setup": {
+          "nixPkgs": [
+            "python311",
+            "python311Packages.pip",
+            "gcc",
+            "libffi",
+            "glib",
+            "pango",
+            "cairo",
+            "gdk-pixbuf",
+            "libjpeg",
+            "zlib",
+            "libxml2",
+            "libxslt"
+          ],
+          "aptPkgs": [
+            "libpango-1.0-0",
+            "libpangocairo-1.0-0",
+            "libcairo2",
+            "libgdk-pixbuf2.0-0",
+            "shared-mime-info",
+            "fonts-dejavu-core",
+            "fonts-liberation"
+          ]
+        }
+      }
+    }
+  },
+  "start": "gunicorn core.wsgi:application --bind 0.0.0.0:$PORT"
+}

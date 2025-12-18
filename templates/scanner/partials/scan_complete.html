@@ -1,0 +1,8 @@
+{% if scan.compliance_report %}
+    <a href="{% url 'reports:report_download' scan.compliance_report.id %}"
+       class="mt-4 inline-block bg-green-600 text-white px-6 py-2 rounded hover:bg-green-700">
+        Download PDF
+    </a>
+{% else %}
+    <p class="text-sm text-gray-600 mt-2">Generating report...</p>
+{% endif %}

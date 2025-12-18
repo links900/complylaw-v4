@@ -1,0 +1,102 @@
+{% extends "base.html" %}
+
+{% block title %}Trial Activated · ComplyLaw{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div style="
+        max-width: 640px;
+        margin: 80px auto 0;
+        background: linear-gradient(180deg, #0f172a, #020617);
+        border: 1px solid #1e293b;
+        border-radius: 24px;
+        padding: 56px 40px;
+        text-align: center;
+        box-shadow: 0 40px 120px rgba(2,6,23,0.85);
+    ">
+        <div style="
+            width: 72px;
+            height: 72px;
+            margin: 0 auto 28px;
+            border-radius: 50%;
+            background: rgba(34, 197, 94, 0.15); /* Green background */
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 32px;
+            color: #4ade80; /* Brighter green for the tick */
+            border: 1px solid rgba(34, 197, 94, 0.3); /* Soft green border */
+        ">
+            ✓
+        </div>
+
+        <h1 style="
+            margin: 0 0 12px;
+            font-size: 36px;
+            font-weight: 800;
+            letter-spacing: -0.02em;
+            color: #ffffff;
+        ">
+            You're in.
+        </h1>
+
+        <h2 style="
+            margin: 0 0 32px;
+            font-size: 20px;
+            font-weight: 500;
+            color: #cbd5f5;
+        ">
+            Your Account is now active
+        </h2>
+
+        <div style="
+            background: rgba(21, 128, 61, 0.25); /* Deep translucent green */
+            border: 1px solid #22c55e; /* Solid emerald border */
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+        ">
+            <span style="font-size: 22px;">✉️</span>
+            <span style="font-size: 16px; color: #f0fdf4; font-weight: 700; letter-spacing: 0.01em;">
+                We’ve sent your login details to your email.
+            </span>
+        </div>
+
+        <p style="
+            margin: 0 0 40px;
+            font-size: 16px;
+            color: #94a3b8;
+            line-height: 1.6;
+        ">
+            Unlimited scans. Full access. No artificial limits.<br>
+            Start securing your infrastructure today.
+        </p>
+
+        <a href="/accounts/login/" style="
+            display: inline-block;
+            padding: 18px 44px;
+            background: linear-gradient(180deg, #2563eb, #1d4ed8);
+            color: #ffffff;
+            border-radius: 12px;
+            font-size: 18px;
+            font-weight: 700;
+            box-shadow: 0 12px 30px rgba(37,99,235,0.4);
+            text-decoration: none;
+        ">
+            Go to Login →
+        </a>
+
+        <div style="
+            margin-top: 40px;
+            font-size: 13px;
+            color: #475569;
+        ">
+            Didn't get the email? Check your spam folder or contact support.
+        </div>
+    </div>
+</div>
+{% endblock %}

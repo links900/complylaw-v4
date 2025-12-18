@@ -1,0 +1,43 @@
+<!-- templates/reports/report_detail.html -->
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Report #{{ report.pk }} – {{ report.scan.domain }}{% endblock %}
+
+{% block content %}
+<div class="max-w-5xl mx-auto p-6">
+    <div class="bg-white rounded-lg shadow-lg p-8">
+        <div class="flex justify-between items-start mb-6">
+            <div>
+                <h1 class="text-3xl font-bold text-gray-800">{{ report.scan.domain }}</h1>
+                <p class="text-sm text-gray-600 mt-1">Scan ID: <code>{{ report.scan.scan_id }}</code></p>
+            </div>
+            <div class="text-right">
+                <p class="text-2xl font-bold text-indigo-600">{{ report.scan.grade|default:"—" }}</p>
+                <p class="text-sm text-gray-600">Risk Score: {{ report.scan.risk_score|floatformat:1 }}%</p>
+            </div>
+        </div>
+
+        <div class="grid md:grid-cols-2 gap-6 mb-8">
+            <div>
+                <h3 class="font-semibold text-gray-700">Scan Summary</h3>
+                <p><strong>Firm:</strong> {{ report.scan.firm.firm_name }}</p>
+                <p><strong>Scanned:</strong> {{ report.scan.scan_date|date:"M d, Y h:i A" }}</p>
+            </div>
+            <div>
+                <h3 class="font-semibold text-gray-700">Report Generated</h3>
+                <p>{{ report.generated_at|date:"M d, Y h:i A" }}</p>
+            </div>
+        </div>
+
+        <div class="flex gap-3">
+            <a href="{% url 'reports:report_download' report.pk %}" class="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700">
+                Download PDF
+            </a>
+            <a href="{% url 'reports:report_list' %}" class="bg-gray-600 text-white px-4 py-2 rounded hover:bg-gray-700">
+                Back to List
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}

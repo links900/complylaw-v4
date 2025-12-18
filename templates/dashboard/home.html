@@ -1,0 +1,187 @@
+<!-- templates/dashboard/home.html — FINAL VERSION (WORKS 100%) -->
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Dashboard – ComplyLaw{% endblock %}
+
+{% block content %}
+<div class="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 py-12 px-4">
+  <div class="max-w-7xl mx-auto">
+
+    <!-- Welcome Hero -->
+    <div class="text-center mb-12">
+      <h1 class="text-5xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 to-purple-600">
+        Welcome back{% if user.get_full_name %}, {{ user.get_full_name }}{% elif user.email %}, {{ user.email|truncatechars:20 }}{% else %}, Legal Pro{% endif %}!
+      </h1>
+      <p class="mt-4 text-xl text-gray-600">Here's your compliance overview</p>
+    </div>
+
+    {% if user.firm %}
+
+      <!-- Firm Summary Cards -->
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-8 mb-12">
+        <!-- Firm Info -->
+        <div class="bg-white rounded-2xl shadow-xl p-8 border border-indigo-100 transform hover:scale-105 transition">
+          <div class="flex items-center justify-between">
+            <div>
+              <p class="text-sm font-medium text-indigo-600 uppercase tracking-wider">Your Firm</p>
+              <h3 class="text-2xl font-bold text-gray-800 mt-2">{{ user.firm.firm_name }}</h3>
+              <p class="text-gray-600 mt-1">{{ user.firm.domain }}</p>
+            </div>
+            <div class="text-indigo-600">
+              <svg class="w-16 h-16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" 
+                      d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0H5m14 0h2m-2 0H5m0 0h2"/>
+              </svg>
+            </div>
+          </div>
+        </div>
+
+        <!-- Unread Alerts -->
+        <div class="bg-gradient-to-br from-yellow-400 to-orange-500 rounded-2xl shadow-xl p-8 text-white transform hover:scale-105 transition">
+          <div class="flex items-center justify-between">
+            <div>
+              <p class="text-sm font-medium uppercase tracking-wider opacity-90">Alerts</p>
+              <p class="text-5xl font-extrabold mt-3">{{ unread_alerts|default:"0" }}</p>
+              <p class="text-sm mt-2 opacity-90">Require attention</p>
+            </div>
+            <div class="text-yellow-100">
+              <svg class="w-16 h-16" fill="currentColor" viewBox="0 0 20 20">
+                <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z"/>
+              </svg>
+            </div>
+          </div>
+        </div>
+
+        <!-- Last Scan -->
+        <div class="bg-gradient-to-br from-green-500 to-emerald-600 rounded-2xl shadow-xl p-8 text-white transform hover:scale-105 transition">
+          <div class="flex items-center justify-between">
+            <div>
+              <p class="text-sm font-medium uppercase tracking-wider opacity-90">Last Scan</p>
+              <p class="text-3xl font-extrabold mt-3">
+                {% if last_scan %}
+                  {{ last_scan.scan_date|date:"M j, Y" }}
+                {% else %}
+                  Never
+                {% endif %}
+              </p>
+              {% if last_scan %}
+                <p class="text-sm mt-2 opacity-90">{{ last_scan.scan_date|time:"g:i A" }}</p>
+              {% endif %}
+            </div>
+            <div class="text-green-100">
+              <svg class="w-16 h-16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" 
+                      d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+              </svg>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Recent Scans Section -->
+      <div class="bg-white rounded-2xl shadow-2xl overflow-hidden">
+        <div class="px-8 py-6 bg-gradient-to-r from-indigo-600 to-purple-600">
+          <div class="flex justify-between items-center">
+            <h2 class="text-2xl font-bold text-white">Recent Compliance Scans</h2>
+            <a href="{% url 'scanner:scan_list' %}" 
+               class="inline-flex items-center px-6 py-3 bg-white text-indigo-700 font-bold rounded-lg hover:bg-indigo-50 transition shadow-lg">
+              <span>View All Scans</span>
+              <svg class="w-5 h-5 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+              </svg>
+            </a>
+          </div>
+        </div>
+
+        <div class="p-6">
+          {% if recent_scans %}
+            <div class="space-y-4">
+              {% for scan in recent_scans %}
+                <div class="flex items-center justify-between p-6 bg-gray-50 rounded-xl hover:bg-gray-100 transition border border-gray-200">
+                  <div class="flex items-center space-x-6">
+                    <div class="text-3xl font-bold text-gray-400">#{{ scan.id }}</div>
+                    <div>
+                      <p class="text-lg font-semibold text-gray-800">{{ scan.domain }}</p>
+                      <p class="text-sm text-gray-500">
+                        {{ scan.scan_date|date:"F j, Y \a\t g:i A" }}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div class="flex items-center space-x-6">
+                    <span class="px-4 py-2 text-sm font-bold rounded-full
+                      {% if scan.status == 'complete' %}bg-green-100 text-green-800
+                      {% elif scan.status == 'running' %}bg-blue-100 text-blue-800 animate-pulse
+                      {% elif scan.status == 'failed' %}bg-red-100 text-red-800
+                      {% else %}bg-gray-100 text-gray-700{% endif %}">
+                      {{ scan.get_status_display }}
+                    </span>
+
+                    {% if scan.grade %}
+                      <div class="text-center">
+                        <span class="block text-4xl font-extrabold
+                          {% if scan.grade == 'A' %}text-green-600
+                          {% elif scan.grade == 'B' %}text-blue-600
+                          {% elif scan.grade == 'C' %}text-yellow-600
+                          {% elif scan.grade == 'D' %}text-orange-600
+                          {% else %}text-red-600{% endif %}">
+                          {{ scan.grade }}
+                        </span>
+                        <span class="text-xs text-gray-500">Grade</span>
+                      </div>
+                    {% else %}
+                      <span class="text-gray-400 text-sm">—</span>
+                    {% endif %}
+
+                    <div class="text-right">
+                      <p class="text-2xl font-bold text-gray-800">{{ scan.risk_score|floatformat:1 }}%</p>
+                      <p class="text-xs text-gray-500">Risk Score</p>
+                    </div>
+                  </div>
+                </div>
+              {% endfor %}
+            </div>
+          {% else %}
+            <div class="text-center py-16">
+              <div class="text-6xl mb-6">No scans yet</div>
+              <p class="text-xl text-gray-600 mb-8">Run your first compliance scan to get started</p>
+              <button hx-get="{% url 'scanner:run_modal' %}" hx-target="#modal"
+                      class="inline-flex items-center px-8 py-4 bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-bold text-lg rounded-xl hover:from-indigo-700 hover:to-purple-700 transition transform hover:scale-105 shadow-2xl">
+                <svg class="w-7 h-7 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+                </svg>
+                Run Your First Scan
+              </button>
+            </div>
+          {% endif %}
+        </div>
+      </div>
+
+    {% else %}
+      <!-- No Firm Setup -->
+      <div class="text-center py-24">
+        <div class="bg-white rounded-3xl shadow-2xl p-16 max-w-2xl mx-auto border-4 border-yellow-400">
+          <div class="text-8xl mb-8">Warning</div>
+          <h2 class="text-4xl font-extrabold text-gray-800 mb-6">Complete Your Firm Setup</h2>
+          <p class="text-xl text-gray-600 mb-10">
+            You need to set up your law firm profile before you can run compliance scans and generate reports.
+          </p>
+          <a href="{% url 'users:firm_wizard' %}"
+             class="inline-flex items-center px-12 py-6 bg-gradient-to-r from-yellow-500 to-orange-600 text-white font-extrabold text-2xl rounded-2xl hover:from-yellow-600 hover:to-orange-700 transition transform hover:scale-110 shadow-2xl">
+            <svg class="w-10 h-10 mr-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
+                    d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+            </svg>
+            Set Up Your Firm Now
+          </a>
+        </div>
+      </div>
+    {% endif %}
+
+  </div>
+</div>
+
+<!-- HTMX Modal Container -->
+<div id="modal"></div>
+{% endblock %}

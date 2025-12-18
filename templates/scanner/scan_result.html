@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+{% block title %}Scan Result - ComplyLaw{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto space-y-6">
+    <div class="bg-white p-6 rounded-lg shadow">
+        <h2 class="text-2xl font-bold mb-4">Scan Results</h2>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div class="text-center p-4 bg-green-50 rounded">
+                <p class="text-sm text-green-600">Grade</p>
+                <p class="text-4xl font-bold text-green-800">{{ scan.grade }}</p>
+            </div>
+            <div class="text-center p-4 bg-yellow-50 rounded">
+                <p class="text-sm text-yellow-600">Risk Score</p>
+                <p class="text-2xl font-bold text-yellow-800">{{ scan.risk_score|floatformat:1 }}</p>
+            </div>
+            <div class="text-center p-4 bg-blue-50 rounded">
+                <p class="text-sm text-blue-600">Scan Date</p>
+                <p class="font-medium">{{ scan.scan_date|date:"M d, Y H:i" }}</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="bg-white p-6 rounded-lg shadow">
+        <h3 class="text-lg font-semibold mb-4">Key Findings</h3>
+        <div class="space-y-3">
+            {% for finding in scan.raw_data.findings|default:"[]" %}
+                <div class="border-l-4 border-orange-500 pl-4 py-2">
+                    <p class="font-medium">{{ finding.title }}</p>
+                    <p class="text-sm text-gray-600">{{ finding.description }}</p>
+                </div>
+            {% empty %}
+                <p class="text-gray-500">No critical findings.</p>
+            {% endfor %}
+        </div>
+    </div>
+
+    <div class="text-center">
+        <a href="{% url 'reports:report_download' scan.report.id %}" 
+           class="bg-green-600 text-white px-8 py-3 rounded-lg hover:bg-green-700 inline-block">
+            Download Full PDF Report
+        </a>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,148 @@
+{% load humanize %}
+<!DOCTYPE html>
+<html lang="en" class="h-full">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Scan Progress - ComplyLaw</title>
+
+    <!-- Tailwind -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+    <!-- HTMX -->
+    <script src="https://unpkg.com/htmx.org@1.9.10"></script>
+
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+    </style>
+</head>
+<body class="bg-gray-50 text-gray-900 min-h-screen flex flex-col">
+
+    <!-- Navbar -->
+    <nav class="bg-white shadow-sm border-b border-gray-200">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between h-16">
+                <div class="flex items-center">
+                    <h1 class="text-xl font-bold text-blue-600">ComplyLaw</h1>
+                </div>
+                <div class="flex items-center space-x-4">
+                    <a href="/" class="text-gray-700 hover:text-blue-600">Dashboard</a>
+                    <a href="/scanner/list/" class="text-gray-700 hover:text-blue-600">Scans</a>
+                    <a href="/reports/" class="text-gray-700 hover:text-blue-600">Reports</a>
+                    <a href="{% url 'users:profile' %}" class="text-gray-700 hover:text-blue-600">Profile</a>
+                    <form method="post" action="/accounts/logout/" class="inline">
+                        {% csrf_token %}
+                        <button type="submit" class="text-red-600 hover:text-red-800 text-sm">Logout</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main -->
+    <main class="flex-1 container max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8" >
+
+        <div class="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 py-10 px-4">
+
+            <div class="text-center mb-12">
+				<h1 class="text-4xl font-bold text-indigo-700">
+					 Compliance Scan Status
+				</h1>
+			</div>
+			
+            
+			
+			 <div class="mb-8 text-center">
+				  <a href="{% url 'scanner:scan_list' %}" 
+					 class="inline-flex items-center px-6 py-3 bg-indigo-600 text-white font-medium rounded-lg hover:bg-indigo-700 transition shadow">
+					Back to Scans
+				  </a>
+			</div>
+	
+
+            <!-- HTMX + WebSocket container : hx-trigger="revealed"-->
+            <div id="scan-progress"
+                 hx-get="{% url 'scanner:scan_status_partial' scan.id %}"
+                 hx-trigger="load, every 2s"
+                 hx-swap="outerHTML"
+                 hx-target="this">
+
+                {% include 'scanner/partials/scan_progress.html' %}
+            </div>
+
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-white border-t border-gray-200 mt-auto">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 text-center text-sm text-gray-500">
+            © 2025 ComplyLaw. All rights reserved.
+        </div>
+    </footer>
+
+    <!-- JS: WebSocket + log auto-scroll -->
+    <script>
+    (function() {
+        let socket = null;
+
+        function connectWebSocket() {
+            if(socket) socket.close();
+            const scanId = "{{ scan.id }}";
+            const wsUrl = (location.protocol === 'https:' ? 'wss://' : 'ws://') + location.host + '/ws/scan/' + scanId + '/';
+            socket = new WebSocket(wsUrl);
+
+            socket.onmessage = function(e) {
+                const data = JSON.parse(e.data);
+
+                // Progress updates
+                if(data.progress !== undefined){
+                    const bar = document.querySelector("#scan-progress-container .h-4");
+                    if(bar) bar.style.width = data.progress + "%";
+                    const percentText = document.querySelector("#scan-progress-container .text-sm.text-slate-600");
+                    if(percentText) percentText.textContent = `${data.progress}%`;
+                    const stepText = document.querySelector("#scan-progress-container .mt-3.text-xs");
+                    if(stepText) stepText.textContent = data.step || "Finalizing...";
+                }
+
+                // Completion: reload partial
+                if(data.type === "complete" || data.force_reload || data.progress === 100){
+                    setTimeout(() => { htmx.trigger("#scan-progress", "revealed"); }, 600);
+                }
+            };
+
+            socket.onopen = () => console.log("WS connected");
+			socket.onclose = () => setTimeout(connectWebSocket, 1500);
+        }
+
+        // Autoscroll log
+        function scrollLogToBottom(){
+            const log = document.getElementById('log-container');
+            if(!log) return;
+            const threshold = 120;
+            const distance = log.scrollHeight - log.clientHeight - log.scrollTop;
+            if(distance < threshold){
+                log.scrollTop = log.scrollHeight;
+            }
+        }
+
+        // Log buttons
+        document.addEventListener('click', function(e){
+            if(e.target.id === 'log-top') document.getElementById('log-container').scrollTop = 0;
+            if(e.target.id === 'log-bottom') document.getElementById('log-container').scrollTop = document.getElementById('log-container').scrollHeight;
+        });
+
+        // Ensure scroll after HTMX swap
+        document.body.addEventListener('htmx:afterOnLoad', function(evt){
+            if(evt.detail.elt.id === "scan-progress") scrollLogToBottom();
+        });
+
+        window.addEventListener('load', scrollLogToBottom);
+
+        // Start WS
+        connectWebSocket();
+    })();
+    </script>
+
+</body>
+</html>

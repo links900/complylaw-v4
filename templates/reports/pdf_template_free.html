@@ -1,0 +1,339 @@
+<!-- templates\reports\pdf_template_free.html-->
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Compliance Report - Scan #{{ scan.id }}</title>
+    <style>
+        @page {
+            size: A4;
+            margin: 1.5cm;
+            @bottom-center {
+                content: "Page " counter(page) " of " counter(pages) ;
+                font-size: 9pt;
+                color: #666;
+            }
+        }
+        body {
+            font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+            color: #333;
+            line-height: 1.5;
+            font-size: 11pt;
+            margin: 0;
+        }
+        .container {
+            max-width: 100%;
+        }
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            border-bottom: 2px solid #1e40af;
+            padding-bottom: 1rem;
+            margin-bottom: 1.5rem;
+        }
+        .logo {
+            max-height: 60px;
+            max-width: 180px;
+        }
+        .firm-info h1 {
+            font-size: 1.6rem;
+            color: #1e40af;
+            margin: 0;
+        }
+        .firm-info p {
+            margin: 0.2rem 0;
+            font-size: 0.9rem;
+            color: #555;
+        }
+        .report-title {
+            text-align: center;
+            margin: 1.5rem 0;
+        }
+        .report-title h2 {
+            font-size: 1.8rem;
+            color: #1e40af;
+            margin: 0;
+        }
+        .report-title p {
+            margin: 0.5rem 0 0;
+            color: #666;
+            font-size: 1rem;
+        }
+        .summary {
+            display: flex;
+            justify-content: space-around;
+            background: #f8fafc;
+            padding: 1rem;
+            border-radius: 8px;
+            margin-bottom: 1.5rem;
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+        .summary-item {
+            text-align: center;
+            min-width: 120px;
+        }
+        .grade-badge {
+            display: inline-block;
+            width: 60px;
+            height: 60px;
+            line-height: 60px;
+            border-radius: 50%;
+            font-size: 1.8rem;
+            font-weight: bold;
+            color: white;
+            margin-bottom: 0.5rem;
+        }
+        .grade-A { background: #10b981; }
+        .grade-B { background: #3b82f6; }
+        .grade-C { background: #f59e0b; }
+        .grade-D { background: #f97316; }
+        .grade-F { background: #ef4444; }
+        .summary-item h4 {
+            margin: 0.3rem 0;
+            font-size: 0.9rem;
+            color: #444;
+        }
+        .summary-item p {
+            margin: 0;
+            font-size: 1rem;
+            font-weight: 600;
+        }
+        .section {
+            margin-bottom: 1.8rem;
+        }
+        .section h3 {
+            font-size: 1.3rem;
+            color: #1e40af;
+            border-bottom: 1px solid #e2e8f0;
+            padding-bottom: 0.4rem;
+            margin-bottom: 0.8rem;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 1rem;
+        }
+        th, td {
+            border: 1px solid #e2e8f0;
+            padding: 0.6rem;
+            text-align: left;
+            vertical-align: top;
+        }
+        th {
+            background: #f1f5f9;
+            font-weight: 600;
+            color: #1e40af;
+        }
+        tr:nth-child(even) {
+            background: #f8fafc;
+        }
+        .risk-low { color: #10b981; font-weight: 600; }
+        .risk-medium { color: #f59e0b; font-weight: 600; }
+        .risk-high { color: #ef4444; font-weight: 600; }
+        .recommendations {
+            background: #fef3c7;
+            padding: 1rem;
+            border-left: 4px solid #f59e0b;
+            margin: 1rem 0;
+            border-radius: 0 4px 4px 0;
+        }
+        .priority-high { color: #ef4444; font-weight: bold; }
+        .priority-medium { color: #f59e0b; }
+        .priority-low { color: #10b981; }
+        .footer {
+            margin-top: 2rem;
+            padding-top: 1rem;
+            border-top: 1px solid #e2e8f0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 0.8rem;
+            color: #666;
+        }
+        .qr-code {
+            width: 80px;
+            height: 80px;
+        }
+        .verification {
+            text-align: right;
+        }
+        .verification p {
+            margin: 0.2rem 0;
+        }
+        .no-data {
+            color: #888;
+            font-style: italic;
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+
+    <!-- Header -->
+    <div class="header">
+        {% if scan.firm.logo %}
+            <img src="{{ scan.firm.logo.url }}" alt="{{ scan.firm.firm_name }} Logo" class="logo">
+        {% else %}
+            <div></div>
+        {% endif %}
+        <div class="firm-info">
+            <h1>{{ scan.firm.firm_name }}</h1>
+            <p>{{ scan.firm.address|default:"—" }}</p>
+            <p>{{ scan.firm.phone|default:"—" }} | {{ scan.firm.email|default:"—" }}</p>
+        </div>
+    </div>
+
+    <!-- Report Title -->
+    <div class="report-title">
+        <h2>Compliance & Security Audit Report</h2>
+		<p>Scan ID: #{{ scan.scan_id }} | Scan Website: {{ scan.domain }} | Generated at {{ scan.scan_date|date:"M d, Y H:i" }}</p>
+    </div>
+
+    <!-- Summary -->
+    <div class="summary">
+        <div class="summary-item">
+            <div class="grade-badge grade-{{ scan.grade|default:'F' }}">{{ scan.grade|default:"—" }}</div>
+            <h4>Compliance Grade</h4>
+        </div>
+        <div class="summary-item">
+            <p>{{ scan.risk_score|floatformat:0 }}%</p>
+            <h4>Risk Score</h4>
+        </div>
+        <div class="summary-item">
+            <p>{{ findings|length }}</p>
+            <h4>Issues Found</h4>
+        </div>
+        <!-- <div class="summary-item">
+            <p>{{ scan_duration|default:"—" }}</p>
+            <h4>Scan Duration</h4>
+        </div>
+		-->
+    </div>
+
+    <!-- =============================================================== -->
+    <!-- 1. EXECUTIVE SUMMARY (INSURANCE-GRADE) -->
+    <!-- =============================================================== -->
+    <div class="section">
+        <h3>Executive Summary</h3>
+        <p>
+            This assessment provides an independent, high-confidence evaluation of
+            {{ scan.domain }} against GDPR, CCPA, and international cybersecurity
+            expectations. The objective is to determine regulatory exposure,
+            security posture, and insurer-relevant operational risk.
+        </p>
+
+        <p>
+            Based on automated analysis and expert-mapped heuristics, the website
+            currently holds a <strong>Grade {{ scan.grade|default:"—" }}</strong> with
+            a risk score of <strong>{{ scan.risk_score|floatformat:0 }}%</strong>.
+            A total of <strong>{{ findings|length }}</strong> compliance-impacting
+            issues were identified across data protection, cookie governance,
+            tracking technologies, server configuration, and user privacy rights.
+        </p>
+
+        <p>
+            This report uses insurer-aligned severity scales and remediation forecasts.
+            It helps demonstrate due diligence, evidences proactive risk management,
+            and documents the organization’s commitment to regulatory maturity.
+        </p>
+    </div>
+	
+	<!-- Key Findings -->
+    <div class="section">
+        <h3>Findings ({{ findings|length }} total)</h3>
+        {% if findings %}
+        <table>
+            <thead>
+                <tr>
+                    <th>Category</th>
+                    <th>Issue</th>
+                    <th>Risk Level</th>
+                    <th>Status</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for finding in findings %}
+                <tr>
+                    <td>{{ finding.category|default:"General" }}</td>
+                    <td>{{ finding.title|default:"Untitled" }}</td>
+                    <td>
+                        <span class="risk-{{ finding.risk_level|lower|default:'medium' }}">
+                            {{ finding.risk_level|title|default:"Medium" }}
+                        </span>
+                    </td>
+                    <td>{{ finding.status|default:"Open" }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+        <p class="no-data">No issues found. Excellent compliance!</p>
+        {% endif %}
+    </div>
+
+    <!-- Recommendations -->
+    {% if recommendations %}
+    <div class="section">
+        <h3>Recommendations</h3>
+        {% for rec in recommendations %}
+        <div class="recommendations">
+            <strong>{{ rec.title|default:"Recommendation" }}</strong><br>
+            <span class="priority-{{ rec.priority|lower|default:'medium' }}">
+                Priority: {{ rec.priority|title|default:"Medium" }}
+            </span><br>
+            {{ rec.description|default:"No description provided."|linebreaksbr }}
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+	
+	
+	<!-- =============================================================== -->
+    <!-- . SPECIAL-TONE SUMMARY (Geopolitical / Heavy) -->
+    <!-- =============================================================== -->
+    <div class="section">
+        <h3>Strategic Risk Perspective</h3>
+        <p>
+            The modern threat landscape is no longer a contest of firewalls and forms.
+            It is an information battlefield where regulatory bodies, insurance
+            underwriters, adversarial automation, and geopolitical actors intersect.
+        </p>
+
+        <p>
+            Every unprotected endpoint becomes a liability.  
+            Every unsecured cookie banner becomes a legal vector.  
+            Every deficiency in data governance becomes an invitation for scrutiny.  
+        </p>
+
+        <p>
+            The findings in this document should not be interpreted as simple
+            technical misconfigurations. They represent structural weak points
+            that adversaries, auditors, and litigators can exploit with precision.
+        </p>
+
+        <p>
+            Addressing these issues decisively reduces legal exposure, improves
+            insurability, and reinforces the firm’s operational resilience in a
+            world where digital risks are increasingly weaponized.
+        </p>
+    </div>
+
+    <!-- Footer -->
+    <div class="footer">
+        <div>
+            <p><strong>Generated:</strong> {{ scan.scan_date|date:"M d, Y H:i" }}<</p>
+            <p><strong>ComplyLaw</strong> — AI-Powered Compliance Scanner</p>
+        </div>
+        <div class="verification">
+            <p>Verify Report Authenticity:</p>
+            <img src="https://api.qrserver.com/v1/create-qr-code/?size=80x80&data={{ request.build_absolute_uri }}" alt="QR Code" class="qr-code">
+            <p>Scan to validate</p>
+        </div>
+    </div>
+
+</div>
+</body>
+</html>

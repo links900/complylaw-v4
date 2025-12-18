@@ -1,0 +1,188 @@
+{% extends "base.html" %}
+{% load static %}
+{% block title %}Firm Settings – ComplyLaw{% endblock %}
+
+{% block content %}
+<div class="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 py-10 px-4">
+  <div class="max-w-4xl mx-auto">
+    <div class="bg-white rounded-xl shadow-xl overflow-hidden">
+      <!-- Header -->
+      <div class="bg-gradient-to-r from-indigo-600 to-purple-600 px-8 py-7 text-center">
+        <h1 class="text-3xl font-bold text-white">Firm Settings</h1>
+        <p class="text-indigo-100 mt-2 text-base">Update your firm information</p>
+      </div>
+
+      <div class="p-8">
+        <!-- Messages -->
+        {% if messages %}
+          {% for message in messages %}
+            <div class="mb-6 p-4 rounded-lg text-center font-medium text-sm border
+              {% if message.tags == 'success' %}bg-green-50 text-green-800 border-green-200
+              {% elif message.tags == 'error' %}bg-red-50 text-red-700 border-red-200{% endif %}">
+              {{ message }}
+            </div>
+          {% endfor %}
+        {% endif %}
+
+        <form method="post" enctype="multipart/form-data" class="space-y-8">
+          {% csrf_token %}
+
+          <!-- Firm Info Grid -->
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div>
+              <label class="block text-sm font-semibold text-gray-700 mb-2">Firm Name <span class="text-red-500">*</span></label>
+              {{ form.firm_name }}
+              {% if form.firm_name.errors %}
+                <p class="text-red-600 text-xs mt-1">{{ form.firm_name.errors|join:", " }}</p>
+              {% endif %}
+            </div>
+            <div>
+              <label class="block text-sm font-semibold text-gray-700 mb-2">Domain <span class="text-red-500">*</span></label>
+              {{ form.domain }}
+              {% if form.domain.errors %}
+                <p class="text-red-600 text-xs mt-1">{{ form.domain.errors|join:", " }}</p>
+              {% endif %}
+            </div>
+            <div>
+              <label class="block text-sm font-semibold text-gray-700 mb-2">Firm Email <span class="text-red-500">*</span></label>
+              {{ form.email }}
+              {% if form.email.errors %}
+                <p class="text-red-600 text-xs mt-1">{{ form.email.errors|join:", " }}</p>
+              {% endif %}
+            </div>
+            <div>
+              <label class="block text-sm font-semibold text-gray-700 mb-2">Phone Number</label>
+              {{ form.phone }}
+              {% if form.phone.errors %}
+                <p class="text-red-600 text-xs mt-1">{{ form.phone.errors|join:", " }}</p>
+              {% endif %}
+            </div>
+            <div class="md:col-span-2">
+              <label class="block text-sm font-semibold text-gray-700 mb-2">Firm Address</label>
+              {{ form.address }}
+              {% if form.address.errors %}
+                <p class="text-red-600 text-xs mt-1">{{ form.address.errors|join:", " }}</p>
+              {% endif %}
+            </div>
+
+            <!-- IMPROVED LOGO SECTION -->
+                        
+				<div class="md:col-span-2">
+				  <label class="block text-sm font-semibold text-gray-700 mb-3">Firm Logo</label>
+
+				  <!-- Current Logo + Remove Button -->
+				  {% if form.instance.logo %}
+					<div class="mb-6 flex items-center gap-6 p-6 bg-gray-50 rounded-xl border border-gray-200">
+					  <img src="{{ form.instance.logo.url }}" alt="Current logo" class="h-32 w-32 object-contain rounded-lg shadow-md border border-gray-200">
+					  <div class="flex-1">
+						<p class="text-sm font-medium text-gray-700">Current logo</p>
+						<p class="text-xs text-gray-500 mt-1">Upload a new image below to replace it</p>
+						<button type="button" 
+								hx-post="{% url 'users:clear_firm_logo' %}"
+								hx-confirm="Are you sure you want to remove the logo?"
+								hx-target="closest div"
+								hx-swap="outerHTML"
+								class="mt-3 inline-flex items-center px-4 py-2 text-sm font-medium text-red-600 bg-red-50 rounded-lg hover:bg-red-100 hover:text-red-700 transition">
+						  <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+							<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+						  </svg>
+						  Remove Logo
+						</button>
+					  </div>
+					</div>
+				  {% else %}
+					<div class="mb-6 p-6 bg-gray-50 rounded-xl border border-gray-200 text-center text-gray-500">
+					  <svg class="w-16 h-16 mx-auto mb-3 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+						<path stroke-linecap="round" stroke-linejoin="round" stroke-width="1" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+					  </svg>
+					  <p class="text-sm">No logo uploaded yet</p>
+					</div>
+				  {% endif %}
+
+				  <!-- File Upload Area -->
+				  <div class="border-2 border-dashed border-gray-300 rounded-xl p-10 text-center hover:border-indigo-400 transition cursor-pointer bg-white">
+					<input type="file" name="logo" accept="image/*" class="hidden" id="id_logo">
+					<label for="id_logo" class="cursor-pointer">
+					  <svg class="w-16 h-16 mx-auto mb-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+						<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/>
+					  </svg>
+					  <p class="text-lg font-medium text-gray-700">Drop your logo here or <span class="text-indigo-600 underline">click to browse</span></p>
+					  <p class="text-sm text-gray-500 mt-2">PNG, JPG, SVG • Max 5MB • Recommended: square with transparent background</p>
+					</label>
+				  </div>
+
+				  <!-- Live Preview -->
+				  <div id="logo-preview" class="mt-6 hidden text-center">
+					<p class="text-sm font-medium text-gray-700 mb-4">New logo preview:</p>
+					<img id="preview-img" class="h-48 w-48 object-contain rounded-xl shadow-xl border border-gray-200 mx-auto">
+				  </div>
+
+				  {% if form.logo.errors %}
+					<p class="text-red-600 text-sm mt-3">{{ form.logo.errors|join:", " }}</p>
+				  {% endif %}
+				</div>
+				
+			
+			
+          </div>
+
+          <!-- Subscription Plan -->
+          <div class="bg-gradient-to-r from-purple-50 to-indigo-50 p-6 rounded-lg border border-purple-200">
+            <h3 class="text-lg font-bold text-gray-800 text-center mb-5">Current Plan</h3>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 text-center">
+              <div>
+                <p class="text-xs uppercase tracking-wider text-gray-600">Plan</p>
+                <p class="text-xl font-bold text-purple-700 mt-1">{{ form.instance.get_subscription_tier_display }}</p>
+              </div>
+              <div>
+                <p class="text-xs uppercase tracking-wider text-gray-600">Status</p>
+                <p class="text-xl font-bold text-green-600 mt-1">Active</p>
+              </div>
+              <div class="flex items-center justify-center">
+                <a href="/billing/" class="px-6 py-2.5 bg-purple-600 text-white font-medium text-sm rounded-lg hover:bg-purple-700 transition">
+                  Upgrade Plan
+                </a>
+              </div>
+            </div>
+          </div>
+
+          <!-- Buttons -->
+          <div class="pt-8 border-t border-gray-200 flex justify-between items-center">
+            <a href="{% url 'users:profile' %}" class="text-indigo-600 hover:text-indigo-800 font-medium text-base">
+              Back to Profile
+            </a>
+            <button type="submit" class="px-8 py-3 bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-bold text-base rounded-lg hover:from-indigo-700 hover:to-purple-700 transition shadow">
+              Save Changes
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- JavaScript for Live Logo Preview -->
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    const input = document.querySelector('input[name="logo"]');
+    const preview = document.getElementById('logo-preview');
+    const previewImg = document.getElementById('preview-img');
+
+    if (input) {
+        input.addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    previewImg.src = e.target.result;
+                    preview.classList.remove('hidden');
+                }
+                reader.readAsDataURL(file);
+            } else {
+                preview.classList.add('hidden');
+            }
+        });
+    }
+});
+</script>
+{% endblock %}
