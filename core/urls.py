@@ -24,6 +24,7 @@ urlpatterns = [
     path('dashboard/', include('dashboard.urls', namespace='dashboard')),
     path('scanner/', include('scanner.urls')),
     path('reports/', include('reports.urls')),
+    path('checklists/', include('checklists.urls', namespace='checklists')),
 ]
 
 if settings.DEBUG:

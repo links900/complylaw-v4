@@ -1,0 +1,23 @@
+<!-- templates\checklists\partials\evidence_container.html-->
+
+
+<div class="evidence-vault p-3 bg-gray-50 rounded-lg border-2 border-dashed border-gray-200">
+    <label class="block text-xs font-bold uppercase text-gray-500 mb-2">Evidence & Artifacts</label>
+
+    <div id="evidence-list-{{ response.id }}">
+        {% include 'checklists/partials/evidence_list.html' %}
+    </div>
+
+    <form hx-post="{% url 'checklists:upload_evidence' response.id %}" 
+          hx-encoding="multipart/form-data" 
+          hx-target="#evidence-list-{{ response.id }}"
+          hx-trigger="change from:input[type=file]">
+        {% csrf_token %}
+        <div class="relative group cursor-pointer border-t mt-2 pt-2">
+            <input type="file" name="evidence" multiple class="absolute inset-0 w-full h-full opacity-0 cursor-pointer">
+            <div class="text-center py-2 group-hover:bg-blue-50 transition-colors rounded">
+                <span class="text-xs text-blue-600 font-bold">+ Upload PDF/Image</span>
+            </div>
+        </div>
+    </form>
+</div>

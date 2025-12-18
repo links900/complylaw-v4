@@ -155,20 +155,29 @@ class ScanStatusView(LoginRequiredMixin, DetailView):
         return context
 
 # === HTMX PARTIAL: Progress Update ===
+# === HTMX PARTIAL: Progress Update ===
 def scan_status_partial(request, pk):
     scan = get_object_or_404(ScanResult, pk=pk, firm=request.user.firm)
-    #print("2>>>>")
-    #print(scan.id)
-    #print(scan)
-    #return render(request, 'scanner/partials/scan_progress.html', {'scan': scan})
     
+    context = {
+        'scan': scan,
+        'active_statuses': ('RUNNING', 'PENDING'),
+    }
     
-    html = render_to_string('scanner/partials/scan_progress.html', {'scan': scan,'active_statuses': ('RUNNING', 'PENDING'),})
+    html = render_to_string('scanner/partials/scan_progress.html', context)
     
     if scan.status == 'COMPLETED':
+        # 1. Standard Cleanup
         html += '<script>htmx.remove(htmx.find("#scan-progress"))</script>'
-        messages.success(request, f"Scan completed. ", extra_tags="scan_complete")
+        messages.success(request, f"Scan completed.", extra_tags="scan_complete")
         
+        # 2. Check for Pro/Enterprise Users
+        # Ensure 'tier' matches the field name in your Firm or Profile model
+        user_firm = request.user.firm
+        if hasattr(user_firm, 'tier') and user_firm.tier.upper() in ['PRO', 'ENTERPRISE']:
+            # Append a special prompt modal or banner
+            prompt_context = {'scan': scan}
+            html += render_to_string('scanner/partials/checklist_prompt.html', prompt_context)
     
     return HttpResponse(html)
 

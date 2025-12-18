@@ -1,0 +1,13 @@
+<!-- templates\checklists\item_row.html-->
+<div class="control-row">
+    <h4>{{ item.title }}</h4>
+    <div class="btn-group">
+        <button hx-post="{% url 'save_response' item.id %}" 
+                hx-vals='{"status": "yes"}'
+                class="btn {% if response.status == 'yes' %}btn-success{% endif %}">
+            Yes
+        </button>
+        </div>
+    <input type="text" name="comment" hx-trigger="keyup changed delay:1s" 
+           hx-post="{% url 'save_comment' item.id %}" placeholder="Add notes...">
+</div>

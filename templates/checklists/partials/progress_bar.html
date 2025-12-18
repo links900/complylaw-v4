@@ -1,0 +1,49 @@
+<!-- templates\checklists\partials\progress_bar.html-->
+{% load math_filters %}
+<div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+    <div class="flex flex-col">
+        <div class="flex items-center gap-2">
+            <span class="text-2xl font-black text-slate-800">{{ completion_percentage }}%</span>
+            <span class="text-xs font-bold text-slate-400 uppercase tracking-widest">Manual Progress</span>
+        </div>
+        <p class="text-xs text-slate-500 font-medium">
+            <span class="text-indigo-600 font-bold">{{ completed_count }}</span> 
+            of {{ total_count }} controls documented
+        </p>
+    </div>
+
+    <div class="flex-1 max-w-xl">
+        <div class="relative h-4 w-full bg-slate-100 rounded-full overflow-hidden border border-slate-200 shadow-inner">
+            <div class="h-full rounded-full bg-gradient-to-r from-indigo-500 via-purple-500 to-indigo-600 transition-all duration-700 ease-out shadow-lg"
+                 style="width: {{ completion_percentage }}%">
+                <div class="w-full h-full opacity-30 bg-[length:20px_20px] bg-[linear-gradient(45deg,rgba(255,255,255,.15)_25%,transparent_25%,transparent_50%,rgba(255,255,255,.15)_50%,rgba(255,255,255,.15)_75%,transparent_75%,transparent)] animate-[shimmer_2s_linear_infinite]"></div>
+            </div>
+        </div>
+    </div>
+
+    <div class="flex items-center">
+        {% if completion_percentage == 100 and not submission.is_locked %}
+            <button class="bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-2.5 rounded-xl text-sm font-bold shadow-lg shadow-indigo-200 transition-all hover:scale-105 active:scale-95 flex items-center gap-2">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                Finalize Audit
+            </button>
+        {% elif submission.is_locked %}
+            <div class="flex items-center gap-2 px-4 py-2 bg-slate-100 border border-slate-200 rounded-xl">
+                <svg class="w-4 h-4 text-slate-400" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clip-rule="evenodd"></path></svg>
+                <span class="text-xs font-bold text-slate-500 uppercase tracking-tight">Audit Closed</span>
+            </div>
+        {% else %}
+            <div class="text-right">
+                <span class="text-[10px] font-black text-slate-400 uppercase tracking-widest block">Remaining</span>
+                <span class="text-sm font-bold text-slate-700">{{ total_count|subtract:completed_count }} items</span>
+            </div>
+        {% endif %}
+    </div>
+</div>
+
+<style>
+    @keyframes shimmer {
+        from { background-position: 0 0; }
+        to { background-position: 40px 0; }
+    }
+</style>

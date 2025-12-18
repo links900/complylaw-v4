@@ -1,0 +1,10 @@
+<div class="flex space-x-2" hx-target="this" hx-swap="outerHTML">
+    {% for val, label in resp.STATUS_CHOICES %}
+    <button hx-post="{% url 'checklists:update_response' resp.id %}"
+            hx-vals='{"status": "{{ val }}"}'
+            hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'
+            class="px-4 py-2 rounded text-sm transition-colors {% if resp.status == val %}bg-blue-600 text-white shadow-md{% else %}bg-gray-100 text-gray-700 hover:bg-gray-200{% endif %}">
+        {{ label }}
+    </button>
+    {% endfor %}
+</div>

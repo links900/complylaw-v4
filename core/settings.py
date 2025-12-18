@@ -164,6 +164,7 @@ INSTALLED_APPS = [
     'reports',
     'dashboard',
     'billing',
+    'checklists',
 ]
 
 # ========================= MIDDLEWARE =========================

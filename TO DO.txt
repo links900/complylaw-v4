@@ -1,0 +1,13 @@
+Task,Priority,Developer Focus
+Data Migration,Critical,Seed ChecklistTemplate with GDPR Art 30/32 and ISO 27001 Annex A.
+Drafting Logic,High,"When ChecklistSubmission is created, copy the responses from the previous submission of that firm to save user time."
+PDF Merging,High,Inject ScoringService.calculate() output into the reports/utils.py PDF context.
+Tier Gatekeeping,Medium,Update context_processors.py to check user.profile.tier before allowing POST to checklist endpoints.
+
+
+
+v1: Scans the code/server (Technical).
+
+v2: Audits the people/process (Organizational).
+
+v3: Merges them into a legally-defensible, tamper-resistant documen

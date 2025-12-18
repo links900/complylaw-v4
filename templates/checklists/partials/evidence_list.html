@@ -1,0 +1,20 @@
+<!-- templates\checklists\partials\evidence_list.html-->
+<ul class="space-y-1 mb-3">
+    {% for evidence in response.evidence_files.all %}
+    <li class="flex items-center justify-between text-sm bg-white p-2 rounded border">
+        <div class="flex items-center">
+            <svg class="w-4 h-4 mr-2 text-gray-400" fill="currentColor" viewBox="0 0 20 20">
+                <path d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4z"></path>
+            </svg>
+            <a href="{{ evidence.file.url }}" target="_blank" class="text-blue-600 hover:underline">{{ evidence.filename }}</a>
+        </div>
+        <button hx-delete="{% url 'checklists:delete_evidence' evidence.id %}"
+                hx-confirm="Are you sure you want to remove this evidence?"
+                hx-target="closest li"
+                hx-swap="delete"
+                class="text-red-400 hover:text-red-600">&times;</button>
+    </li>
+    {% empty %}
+    <p class="text-xs text-gray-400 italic">No evidence uploaded yet.</p>
+    {% endfor %}
+</ul>

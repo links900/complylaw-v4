@@ -1,34 +1,35 @@
+<!-- templates\reports\pdf_template_enterprise.html-->
 {% load groupby_filters %}
+{% load scan_filters %}
 {% load tz %}
 
 <!DOCTYPE html>
 <html>
 <head>
     <meta charset="UTF-8">
-    <title>Compliance Report - {{ scan.domain }}</title>
+    <title>Compliance Report - {{ scan.domain|default:"—" }}</title>
 
     <style>
         /* Page Setup for WeasyPrint */
         @page {
             size: A4;
-            margin: 1.5cm 1.5cm 4cm 1.5cm; /* extra bottom for footer */
+            margin: 1.5cm 1.5cm 4cm 1.5cm;
 
-            /* Footer text on left */
-			@bottom-left {
-				content: "ID: #{{ scan.scan_id }} | {{ scan.scan_date|date:'M d, Y g:i A' }} | ComplyLaw AI Scanner";
-				font-size: 9px;
-				color: #666;
-			}
-			/* Footer text in center */
+            @bottom-left {
+                content: "ID: #{{ scan.scan_id|default:'—' }} | {{ scan.scan_date|date:'M d, Y g:i A'|default:'—' }} | ComplyLaw AI Scanner";
+                font-size: 9px;
+                color: #666;
+            }
             @bottom-center {
                 content: " Page " counter(page) " of " counter(pages);
                 font-size: 9px;
                 color: #666;
             }
-
-            /* Footer QR on right */
             @bottom-right {
-                content: url('https://api.qrserver.com/v1/create-qr-code/?size=50x50&data=https://complylaw.com/report/{{ scan.scan_id }}');
+                content: url('https://api.qrserver.com/v1/create-qr-code/?size=70x70&data=https://{{ host|default:"complylaw-v1.onrender.com" }}/reports/verify-report/?report_id={{ scan.scan_id }}');
+
+				
+				
             }
         }
 
@@ -39,116 +40,33 @@
             color: #333;
         }
 
-        .content-wrapper {
-            padding-bottom: 20px;
-        }
+        .content-wrapper { padding-bottom: 20px; }
+        .cover-page { text-align: center; padding-top: 20px; page-break-after: always; }
+        .cover-center { margin: 100px 0 150px 0; }
+        .cover-center h1 { font-size: 28px; color: #1a5fb4; margin-bottom: 20px; }
+        .cover-center .standards { font-size: 16px; margin-bottom: 15px; }
+        .cover-center .audit-meta { font-size: 14px; line-height: 1.6; }
+        .subtitle { font-size: 14px; margin: 5px 0 20px 0; }
+        .signature { margin-top: 120px; font-style: italic; text-align: right; padding-right: 10px; font-size: 12px; }
 
-        /* Cover Page */
-        .cover-page {
-            text-align: center;
-            padding-top: 40px;
-            page-break-after: always;
-        }
-
-        .cover-center {
-            margin-top: 180px;      /* set vertical spacing here */
-			margin-bottom: 300px;  /* spacing before signature */
-        }
-		
-		.cover-center h1 {
-			font-size: 28px; /* bigger than before */
-			color: #1a5fb4;
-			margin-bottom: 20px;
-		}
-
-		.cover-center .standards {
-			font-size: 16px; /* bigger than default 13px */
-			margin-bottom: 15px;
-		}
-
-		.cover-center .audit-meta {
-			font-size: 14px; /* bigger than default 12px */
-			line-height: 1.6;
-		}
-
-
-        .subtitle { font-size: 14px; margin-top: 5px; margin-bottom: 20px; }
-        .standards { font-size: 13px; margin-top: 10px; }
-        .audit-meta { margin-top: 20px; font-size: 12px; line-height: 1.5; }
-
-        .signature {
-            margin-top: 120px;
-            font-style: italic;
-            text-align: right;
-            padding-right: 10px;
-            font-size: 12px;
-        }
-
-        /* Typography */
         h1 { color: #1a5fb4; text-align: center; font-size: 18px; }
         h2 { color: #1a5fb4; font-size: 14px; border-bottom: 1px solid #1a5fb4; padding-bottom: 5px; }
         h3 { color: #1e40af; font-size: 1.3rem; border-bottom: 1px solid #e2e8f0; padding-bottom: 0.4rem; }
 
-        /* Summary */
-        .summary {
-				display: flex;
-				justify-content: space-around;
-				flex-wrap: wrap;
-				gap: 1rem;
-				background: #f8fafc;
-				padding: 1rem;
-				border-radius: 8px;
-				margin-bottom: 1.5rem;
-				align-items: flex-end; /* aligns all items to the bottom */
-			}
+        .summary { display: flex; justify-content: space-around; flex-wrap: wrap; gap: 1rem; background: #f8fafc; padding: 1rem; border-radius: 8px; margin-bottom: 1.5rem; align-items: flex-end; }
+        .summary-item { text-align: center; min-width: 120px; }
+        .summary-value { font-size: 1.5rem; font-weight: bold; margin: 0; }
 
-			.summary-item {
-				text-align: center;
-				min-width: 120px;
-			}
-
-			.summary-value {
-				font-size: 1.5rem;   /* bigger than h4 */
-				font-weight: bold;
-				margin: 0;           /* remove extra spacing */
-			}
-
-
-        .grade-badge {
-            display: inline-block;
-            width: 60px;
-            height: 60px;
-            line-height: 60px;
-            border-radius: 50%;
-            font-size: 1.8rem;
-            font-weight: bold;
-            color: white;
-            margin-bottom: 0.5rem;
-        }
-
+        .grade-badge { display: inline-block; width: 60px; height: 60px; line-height: 60px; border-radius: 50%; font-size: 1.8rem; font-weight: bold; color: white; margin-bottom: 0.5rem; }
         .grade-A { background: #10b981; }
         .grade-B { background: #3b82f6; }
         .grade-C { background: #f59e0b; }
         .grade-D { background: #f97316; }
         .grade-F { background: #ef4444; }
 
-        /* Tables */
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            margin: 15px 0;
-            font-size: 10px;
-            page-break-inside: auto;
-        }
-
+        table { width: 100%; border-collapse: collapse; margin: 15px 0; font-size: 10px; page-break-inside: auto; }
         tr { page-break-inside: avoid; page-break-after: auto; }
-
-        th, td {
-            border: 1px solid #ccc;
-            padding: 8px;
-            text-align: left;
-        }
-
+        th, td { border: 1px solid #ccc; padding: 8px; text-align: left; }
         th { background-color: #f0f7ff; }
         tr:nth-child(even) { background: #f8fafc; }
 
@@ -156,121 +74,129 @@
         .risk-medium { color: #f59e0b; font-weight: 600; }
         .risk-high { color: #ef4444; font-weight: 600; }
 
-        .recommendations {
-            background: #fef3c7;
-            padding: 1rem;
-            border-left: 4px solid #f59e0b;
-            margin: 1rem 0;
-            border-radius: 0 4px 4px 0;
-        }
-
+        .recommendations { background: #fef3c7; padding: 1rem; border-left: 4px solid #f59e0b; margin: 1rem 0; border-radius: 0 4px 4px 0; }
         .priority-high { color: #ef4444; font-weight: bold; }
         .priority-medium { color: #f59e0b; }
         .priority-low { color: #10b981; }
 
-        .box {
-            border: 2px solid #1a5fb4;
-            border-radius: 8px;
-            padding: 15px;
-            background-color: #f8fbff;
-        }
-
+        .box { border: 2px solid #1a5fb4; border-radius: 8px; padding: 15px; background-color: #f8fbff; }
         hr.dashed { border-top: 1px dashed #ccc; margin: 30px 0; }
-
     </style>
 </head>
 <body>
 
-<!-- PAGE 1 COVER -->
+<!-- Cover Page -->
 <div class="cover-page">
     <h1>ComplyNet Consulting Partners</h1>
-    <p class="subtitle">
-        <strong>Cybersecurity • Compliance • Digital Risk • Web Security</strong>
-    </p>
+    <p class="subtitle"><strong>Cybersecurity • Compliance • Digital Risk • Web Security</strong></p>
     <hr class="dashed">
     <div class="cover-center">
         <h1>Cyber Security Audit & Compliance Report</h1>
         <p class="standards">GDPR | ISO 27001 | OWASP | PCI DSS | Supply Chain</p>
         <p class="audit-meta">
-            Website: {{ scan.domain }}<br>
-            Audit Date: {{ scan.scan_date|date:"F j, Y" }}<br>
-            Report ID: #{{ scan.scan_id }}
+            Website: {{ scan.domain|default:"—" }}<br>
+            Audit Date: {{ scan.scan_date|date:"F j, Y"|default:"—" }}<br>
+            Report ID: #{{ scan.scan_id|default:"—" }}
         </p>
     </div>
+	<div style="
+	  margin: 20px 0;
+	  padding: 4px 8px;
+	  border: 2px solid #4f46e5;
+	  border-radius: 2px;
+	  font-size: 14px;
+	">
+	  <p><strong>Report ID:</strong> {{ scan.scan_id }}</p>
+	  <p>
+		<strong>Verification URL:</strong><br>
+		
+		{% if "127.0.0.1" in host|default:"" or "localhost" in host|default:"" %}
+			http://{{ host|default:"localhost:8000" }}/reports/verify-report/?report_id={{ scan.scan_id }}
+		{% else %}
+			https://{{ host|default:"complylaw-v1.onrender.com" }}/reports/verify-report/?report_id={{ scan.scan_id }}
+		{% endif %}
+
+	  </p>
+	  <p style="margin-top:8px; font-style: italic;">
+		This report can be independently verified on the ComplyLaw verification portal.
+	  </p>
+	</div>
     <div class="signature">
         /s/ Engr. M Imran, Executive Cybersecurity Advisor to Government & Global Enterprises<br>
         Governance, Digital Risk, Compliance & Resilience Strategist<br>
-        {{ scan.scan_date|date:"F j, Y" }}
+        {{ scan.scan_date|date:"F j, Y"|default:"—" }}
     </div>
 </div>
 
 <div style="page-break-before: always;"></div>
 
-<!-- CONTENT -->
 <div class="content-wrapper">
 
     <!-- Summary -->
     <div class="summary">
-		<div class="summary-item">
-			<div class="grade-badge grade-{{ scan.grade|default:'F' }}">
-				{{ scan.grade|default:"—" }}
-			</div>
-			<h4>Compliance Grade</h4>
-		</div>
+        <div class="summary-item">
+            <div class="grade-badge grade-{{ scan.grade|default:'F' }}">
+                {{ scan.grade|default:"—" }}
+            </div>
+            <h4>Compliance Grade</h4>
+        </div>
 
-		<div class="summary-item">
-			<p class="summary-value">{{ scan.risk_score|floatformat:0 }}%</p>
-			<h4>Risk Score</h4>
-		</div>
+        <div class="summary-item">
+            <p class="summary-value">{{ scan.risk_score|default:0|floatformat:0 }}%</p>
+            <h4>Risk Score</h4>
+        </div>
 
-		<div class="summary-item">
-			<p class="summary-value">{{ findings|length }}</p>
-			<h4>Issues Found</h4>
-		</div>
-	</div>
-
+        <div class="summary-item">
+            <p class="summary-value">{{ findings|length|default:0 }}</p>
+            <h4>Issues Found</h4>
+        </div>
+    </div>
 
     <!-- Executive Summary -->
     <div class="section">
         <h3>Executive Summary</h3>
-        <p>This assessment provides an independent, high-confidence evaluation of {{ scan.domain }} against GDPR, CCPA, and international cybersecurity expectations. The objective is to determine regulatory exposure, security posture, and insurer-relevant operational risk.</p>
+        <p>This assessment provides an independent, high-confidence evaluation of {{ scan.domain|default:"—" }} against GDPR, CCPA, and international cybersecurity expectations. The objective is to determine regulatory exposure, security posture, and insurer-relevant operational risk.</p>
+        <p>Based on automated analysis and expert-mapped heuristics, the website currently holds a <strong>Grade {{ scan.grade|default:"—" }}</strong> with a risk score of <strong>{{ scan.risk_score|default:0|floatformat:0 }}%</strong>. A total of <strong>{{ findings|length|default:0 }}</strong> compliance-impacting issues were identified.</p>
 
-        <p>Based on automated analysis and expert-mapped heuristics, the website currently holds a <strong>Grade {{ scan.grade|default:"—" }}</strong> with a risk score of <strong>{{ scan.risk_score|floatformat:0 }}%</strong>. A total of <strong>{{ findings|length }}</strong> compliance-impacting issues were identified.</p>
+        {% if scan.grade|default:"F" in "AB" %}
+            <p>Strong compliance posture. Core regulatory controls are in place.</p>
+        {% elif scan.grade|default:"F" == "C" %}
+            <p>Moderate gaps exist. Several foundational controls require attention.</p>
+        {% else %}
+            <p>Critical deficiencies detected. Immediate remediation required.</p>
+        {% endif %}
 
         <p>This report uses insurer-aligned severity scales and remediation forecasts. It helps demonstrate due diligence, evidences proactive risk management, and documents the organization’s commitment to regulatory maturity.</p>
-		
-	</div>
-	
-	
-	<!-- Findings Overview -->
-    <div class="section">
-        <h3>Findings Overview</h3>
-        		
-		<p>Below is non exhaustive list of compliance with respect to various standarads. If there was no observation in findings that section has been removed from the report .</p>
-		
     </div>
 
-
     <!-- Findings Table -->
-    {% for group in findings|groupby_module %}
-        <h2>{{ forloop.counter }}: {{ group.module }} Compliance Report</h2>
-        <table>
-            <tr>
-                <th>Article</th>
-                <th>Finding</th>
-                <th>Risk</th>
-                <th>Evidence</th>
-            </tr>
-            {% for f in group.items %}
-            <tr>
-                <td>{{ f.standard }}</td>
-                <td>{{ f.title }}</td>
-                <td class="{% if f.risk_level == 'high' %}risk-high{% elif f.risk_level == 'medium' %}risk-medium{% endif %}">{{ f.risk_level }}</td>
-                <td>{{ f.details }}</td>
-            </tr>
-            {% endfor %}
-        </table>
-    {% endfor %}
+    <div class="section">
+        <h3>Detailed Technical Findings by Framework</h3>
+        <p>Below is a non-exhaustive list of compliance findings. Sections without observations have been removed.</p>
+
+        {% for group in findings|groupby_module %}
+            <h2>{{ forloop.counter }}: {{ group.module|default:"—" }} Compliance Report</h2>
+            <table>
+                <tr style="text-align: center;">
+                    <th>{{ group.module|default:"" }} Article</th>
+                    <th>Finding Summary</th>
+                    <th>Risk Rating</th>
+                    <th>Evidence</th>
+                </tr>
+                {% for f in group.items %}
+                <tr>
+                    <td>{{ f|safe_get:"standard" }}</td>
+					<td>{{ f|safe_get:"title,No title" }}</td>
+					<td class="{% if f|safe_get:'risk_level' == 'high' %}risk-high{% elif f|safe_get:'risk_level' == 'medium' %}risk-medium{% elif f|safe_get:'risk_level' == 'low' %}risk-low{% endif %}">
+						{{ f|safe_get:"risk_level,—" }}
+					</td>
+					<td>{{ f|safe_get:"details,No details" }}</td>
+
+                </tr>
+                {% endfor %}
+            </table>
+        {% endfor %}
+    </div>
 
     <!-- Recommendations -->
     {% if recommendations %}
@@ -278,15 +204,15 @@
         <h3>Recommendations</h3>
         {% for rec in recommendations %}
         <div class="recommendations">
-            <strong>{{ rec.title }}</strong><br>
-            <span class="priority-{{ rec.priority|lower }}">Priority: {{ rec.priority }}</span><br>
-            {{ rec.description|linebreaksbr }}
+            <strong>{{ rec.title|default:"—" }}</strong><br>
+            <span class="priority-{{ rec.priority|default:"low"|lower }}">Priority: {{ rec.priority|default:"Low" }}</span><br>
+            {{ rec.description|default:"—"|linebreaksbr }}
         </div>
         {% endfor %}
     </div>
     {% endif %}
 
-    <!-- Strategic Risk -->
+    <!-- Strategic Risk Perspective -->
     <div class="section">
         <h3>Strategic Risk Perspective</h3>
         <p>The modern threat landscape is no longer a contest of firewalls and forms. It is an information battlefield.</p>
@@ -294,8 +220,99 @@
         <p>These findings represent structural weak points that adversaries, auditors, and litigators can exploit.</p>
         <p>Addressing these issues reduces legal exposure, improves insurability, and reinforces operational resilience.</p>
     </div>
+ <!-- V2222222222222222222 -->
+<div class="executive-summary-container">
+    <div class="report-header">
+        <h1>Executive Compliance Summary</h1>
+        <div class="status-badge badge-{{ summary.tone_css }}">
+            {{ summary.status_label }}
+        </div>
+    </div>
 
-    <h2>Insurance Certification Statement</h2>
+    <div class="summary-grid">
+        <div class="score-card">
+            <span class="score-value">{{ compliance.score }}%</span>
+            <span class="score-label">Unified Compliance Score</span>
+        </div>
+
+        <div class="narrative-box">
+            <h3>Professional Assessment</h3>
+            <p>{{ summary.narrative }}</p>
+        </div>
+    </div>
+
+    <div class="risk-overview">
+        <h4>Identified Organizational Gaps</h4>
+        <div class="risk-pills">
+            <div class="pill high">High Risk: {{ compliance.risk_summary.HIGH }}</div>
+            <div class="pill medium">Medium Risk: {{ compliance.risk_summary.MEDIUM }}</div>
+            <div class="pill low">Low Risk: {{ compliance.risk_summary.LOW }}</div>
+        </div>
+    </div>
+
+    <div class="legal-disclaimer">
+        <strong>Attestation Note:</strong> This report combines automated technical telemetry with 
+        self-attested organizational responses. Manual responses are taken as 'truth' as provided 
+        by the authorized professional user.
+    </div>
+</div>
+
+    <h3>Organizational Controls & Risk Assessment</h3>
+<table class="audit-table">
+    <thead>
+        <tr>
+            <th>Ref</th>
+            <th>Control Title</th>
+            <th>Impact</th>
+            <th>Status</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for resp in manual_responses.responses.all %}
+        <tr class="risk-{{ resp.template.risk_impact|lower }}">
+            <td>{{ resp.template.reference_article }}</td>
+            <td>{{ resp.template.title }}</td>
+            <td>{{ resp.template.risk_impact }}</td>
+            <td>{{ resp.get_status_display }}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+<div class="page-break"></div>
+<h2>Detailed Governance Audit</h2>
+{% for resp in responses %}
+<div class="control-audit-block">
+    <div class="control-meta">
+        <strong>{{ resp.template.code }}: {{ resp.template.title }}</strong>
+        <span class="impact-tag {{ resp.template.risk_impact|lower }}">
+            Impact: {{ resp.template.risk_impact }}
+        </span>
+    </div>
+    
+    <div class="control-status">
+        Status: <strong>{{ resp.get_status_display }}</strong>
+    </div>
+
+    <div class="control-notes">
+        <em>Auditor Notes:</em> {{ resp.comment|default:"No notes provided." }}
+    </div>
+
+    {% if resp.evidence_files.exists %}
+    <div class="evidence-links">
+        <strong>Supporting Evidence:</strong>
+        <ul>
+            {% for file in resp.evidence_files.all %}
+            <li>{{ file.filename }} (ID: {{ file.id }})</li>
+            {% endfor %}
+        </ul>
+    </div>
+    {% endif %}
+</div>
+<hr>
+{% endfor %}
+<!-- V2222222222222222222 -->
+
+<h2>Insurance Certification Statement</h2>
     <div class="box">
         <p>ComplyNet Consulting Partners certifies that the findings are based on independent automated technical scans (Burp Suite, Qualys, OpenVAS) and stakeholder interviews (where applicable) conducted on {{ scan.scan_date|date:"F j, Y" }}.</p>
 		
