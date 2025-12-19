@@ -1,7 +1,46 @@
 <!-- templates\checklists\wizard.html-->
 {% extends "base.html" %}
 {% load humanize %}
+<style>
+@media print {
+    /* Hide everything we don't need in the PDF */
+    nav, 
+    .sticky, 
+    #global-sync-indicator, 
+    .bg-indigo-900, 
+    button, 
+    .htmx-indicator,
+    #success-toast {
+        display: none !important;
+    }
 
+    /* Reset layout for paper */
+    body {
+        background: white !important;
+        color: black !important;
+    }
+
+    .max-w-5xl {
+        max-width: 100% !important;
+        margin: 0 !important;
+        padding: 0 !important;
+    }
+
+    /* Ensure cards don't break across pages awkwardly */
+    .control-card {
+        break-inside: avoid;
+        border: 1px solid #e5e7eb !important;
+        margin-bottom: 2rem !important;
+        box-shadow: none !important;
+    }
+
+    /* Force background colors to print (modern browsers) */
+    .bg-indigo-50 {
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+    }
+}
+</style>
 {% block title %}Manual Audit - {{ submission.scan.domain }}{% endblock %}
 
 {% block content %}
@@ -13,13 +52,23 @@
             Conducting audit for <span class="font-mono text-indigo-600 font-semibold">{{ submission.scan.domain }}</span>
         </p>
     </div>
-
+	
+	<div class="flex items-center gap-2 mb-4">
+		<div id="global-sync-indicator" class="flex items-center gap-1.5 px-3 py-1 bg-green-50 text-green-700 rounded-full border border-green-100 opacity-0 transition-opacity duration-500">
+			<svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+				<path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
+			</svg>
+			<span class="text-[10px] font-bold uppercase tracking-wider">All Changes Saved</span>
+		</div>
+	</div>
+	
     <div id="progress-bar-container" 
          class="sticky top-4 z-30 bg-white/80 backdrop-blur-md border border-indigo-100 shadow-lg rounded-2xl p-6 mb-10 transition-all duration-300"
          hx-get="{% url 'checklists:get_progress' submission.id %}" 
          hx-trigger="responseUpdated from:body">
         {% include 'checklists/partials/progress_bar.html' %}
     </div>
+	
 
     <div class="checklist-items space-y-8">
         {% for resp in responses %}
@@ -44,30 +93,27 @@
                         <p class="text-sm text-gray-600 leading-relaxed">{{ resp.template.description }}</p>
                     </div>
 
-                    <div class="flex flex-wrap md:justify-end gap-2 w-full md:w-1/3">
-                        {% if not submission.is_locked %}
-                            {% for val, label in resp.STATUS_CHOICES %}
-                            <button hx-post="{% url 'checklists:update_response' resp.id %}"
-                                    hx-vals='{"status": "{{ val }}"}'
-                                    hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'
-                                    hx-swap="none"
-                                    hx-indicator="#indicator-{{ resp.id }}"
-                                    class="px-4 py-2 rounded-lg text-xs font-bold transition-all border
-                                    {% if resp.status == val %}
-                                        {% if val == 'yes' %}bg-green-600 border-green-600 text-white shadow-lg shadow-green-100{% elif val == 'no' %}bg-red-600 border-red-600 text-white shadow-lg shadow-red-100{% else %}bg-indigo-600 border-indigo-600 text-white shadow-lg shadow-indigo-100{% endif %}
-                                    {% else %}
-                                        bg-white border-gray-200 text-gray-600 hover:border-indigo-300 hover:bg-indigo-50
-                                    {% endif %}">
-                                {{ label }}
-                            </button>
-                            {% endfor %}
-                        {% else %}
-                            <div class="px-5 py-2.5 rounded-full text-xs font-black uppercase tracking-widest border
-                                {% if resp.status == 'yes' %}bg-green-50 border-green-200 text-green-700{% elif resp.status == 'no' %}bg-red-50 border-red-200 text-red-700{% else %}bg-gray-100 border-gray-300 text-gray-600{% endif %}">
-                                Result: {{ resp.status }}
-                            </div>
-                        {% endif %}
-                    </div>
+                    <div class="flex flex-wrap md:justify-end gap-2 w-full md:w-1/3" id="status-container-{{ resp.id }}">
+						{% if not submission.is_locked %}
+							{% for val, label in resp.STATUS_CHOICES %}
+							<button hx-post="{% url 'checklists:update_response' resp.id %}"
+									hx-vals='{"status": "{{ val }}"}'
+									hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'
+									hx-target="#status-container-{{ resp.id }}"  {# CHANGE: Target the container #}
+									hx-swap="outerHTML"                          {# CHANGE: Swap the buttons #}
+									hx-indicator="#indicator-{{ resp.id }}"
+									class="px-4 py-2 rounded-lg text-xs font-bold transition-all border
+									{% if resp.status == val %}
+										{% if val == 'yes' %}bg-green-600 border-green-600 text-white shadow-lg shadow-green-100{% elif val == 'no' %}bg-red-600 border-red-600 text-white shadow-lg shadow-red-100{% else %}bg-indigo-600 border-indigo-600 text-white shadow-lg shadow-indigo-100{% endif %}
+									{% else %}
+										bg-white border-gray-200 text-gray-600 hover:border-indigo-300 hover:bg-indigo-50
+									{% endif %}">
+								{{ label }}
+							</button>
+							{% endfor %}
+						{% else %}
+							{% endif %}
+					</div>
                 </div>
             </div>
 
@@ -127,16 +173,92 @@
         {% endfor %}
     </div>
 
-    {% if not submission.is_locked %}
-    <div class="mt-16 p-8 bg-indigo-900 rounded-3xl text-center shadow-2xl shadow-indigo-200">
-        <h2 class="text-2xl font-bold text-white mb-2">Ready to finalize?</h2>
-        <p class="text-indigo-200 mb-6 text-sm">Once submitted, the audit will be locked and a final compliance report will be generated.</p>
-        <button class="bg-white text-indigo-900 px-8 py-3 rounded-xl font-bold hover:bg-indigo-50 transition-colors shadow-lg">
-            Complete & Lock Audit
-        </button>
-    </div>
+	{% if not submission.is_locked %}
+		<div class="mt-16 p-8 bg-indigo-900 rounded-3xl text-center shadow-2xl shadow-indigo-200">
+			<h2 class="text-2xl font-bold text-white mb-2">Ready to finalize?</h2>
+			<p class="text-indigo-200 mb-6 text-sm">You can exit and return later, or lock the audit now.</p>
+			
+			<div class="flex flex-col md:flex-row items-center justify-center gap-4">
+				<a href="{% url 'dashboard:home' %}" 
+				   class="w-full md:w-auto px-8 py-3 rounded-xl font-bold text-white border border-indigo-400 hover:bg-indigo-800 transition-all flex items-center justify-center gap-2">
+					<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+						<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+					</svg>
+					Save & Exit
+				</a>
+
+				<form action="{% url 'checklists:complete_audit' submission.id %}" method="POST" class="w-full md:w-auto">
+					{% csrf_token %}
+					<button id="finalize-button" 
+							type="submit"
+							class="w-full md:w-auto bg-white text-indigo-900 px-10 py-3 rounded-xl font-bold hover:bg-indigo-50 transition-all duration-300 shadow-lg">
+						Complete & Lock Audit
+					</button>
+				</form>
+			</div>
+		</div>
     {% endif %}
 
+</div>
+<div class="mt-16 p-8 bg-indigo-900 rounded-3xl text-center shadow-2xl shadow-indigo-200">
+    <h2 class="text-2xl font-bold text-white mb-2">Ready to finalize?</h2>
+    <p class="text-indigo-200 mb-6 text-sm">You can exit and return later, or lock the audit now.</p>
+    
+    <div class="flex flex-col md:flex-row items-center justify-center gap-4">
+        <a href="{% url 'dashboard:home' %}"
+           class="w-full md:w-auto px-8 py-3 rounded-xl font-bold text-white border border-indigo-400 hover:bg-indigo-800 transition-all flex items-center justify-center gap-2">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+            </svg>
+            Save & Exit
+        </a>
+
+        <form action="{% url 'checklists:complete_audit' submission.id %}" method="POST" class="w-full md:w-auto">
+            {% csrf_token %}
+            <button id="finalize-button" 
+                    type="submit"
+                    class="w-full md:w-auto bg-white text-indigo-900 px-10 py-3 rounded-xl font-bold hover:bg-indigo-50 transition-all duration-300 shadow-lg">
+                Complete & Lock Audit
+            </button>
+        </form>
+    </div>
+</div>
+
+
+{% if submission.is_locked %}
+<div class="mt-8 p-6 bg-white border-2 border-dashed border-gray-200 rounded-3xl text-center">
+    <div class="mb-4 text-gray-500">
+        <svg class="w-12 h-12 mx-auto mb-2 opacity-20" fill="currentColor" viewBox="0 0 20 20">
+            <path d="M9 2a2 2 0 00-2 2v8a2 2 0 002 2h6a2 2 0 002-2V6.414A2 2 0 0016.414 5L14 2.586A2 2 0 0012.586 2H9z"></path>
+            <path d="M3 8a2 2 0 012-2v10h8a2 2 0 01-2 2H5a2 2 0 01-2-2V8z"></path>
+        </svg>
+        <h3 class="font-bold text-gray-900">Final Report Ready</h3>
+        <p class="text-sm">The assessment is locked. You can now export the compliance findings.</p>
+    </div>
+    
+    <button onclick="window.print()" 
+            class="inline-flex items-center gap-2 bg-indigo-600 text-white px-8 py-3 rounded-xl font-bold hover:bg-indigo-700 transition-all shadow-lg shadow-indigo-100">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9v4a2 2 0 00-2 2v2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"></path>
+        </svg>
+        Print Compliance Report (PDF)
+    </button>
+</div>
+{% endif %}
+
+<div id="success-toast" 
+     class="fixed bottom-10 left-1/2 -translate-x-1/2 z-50 transform translate-y-20 opacity-0 transition-all duration-500 pointer-events-none">
+    <div class="bg-indigo-950 text-white px-6 py-4 rounded-2xl shadow-2xl flex items-center gap-4 border border-indigo-500/30">
+        <div class="bg-green-500 p-2 rounded-full animate-pulse">
+            <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path>
+            </svg>
+        </div>
+        <div>
+            <p class="font-bold text-sm">Assessment Complete!</p>
+            <p class="text-xs text-indigo-300">All controls have been documented. You are ready to finalize.</p>
+        </div>
+    </div>
 </div>
 {% endblock %}
 
@@ -144,14 +266,80 @@
 <script>
     // Subtle effect: change progress bar background on scroll
     window.addEventListener('scroll', function() {
-        const container = document.getElementById('progress-bar-container');
-        if (window.scrollY > 100) {
-            container.classList.add('py-4');
-            container.classList.remove('p-6');
-        } else {
-            container.classList.add('p-6');
-            container.classList.remove('py-4');
-        }
-    });
+		const container = document.getElementById('progress-bar-container');
+		if (window.scrollY > 100) {
+			// Slim down the vertical height only
+			container.classList.remove('p-6');
+			container.classList.add('py-3', 'px-0'); 
+		} else {
+			// Return to original padding
+			container.classList.add('p-6');
+			container.classList.remove('py-3', 'px-0');
+		}
+	});
+	
+	
+	// --- NEW: Success Toast & Final Button Logic ---
+    document.body.addEventListener('auditComplete', function() {
+		// 1. Existing Toast Logic
+		const toast = document.getElementById('success-toast');
+		toast.classList.remove('translate-y-20', 'opacity-0');
+		toast.classList.add('translate-y-0', 'opacity-100');
+
+		// 2. TRIGGER THE CONFETTI
+		// We'll fire two cannons from the bottom corners for a "stadium" feel
+		const duration = 3 * 1000;
+		const animationEnd = Date.now() + duration;
+		const defaults = { startVelocity: 30, spread: 360, ticks: 60, zIndex: 0 };
+
+		function randomInRange(min, max) {
+		  return Math.random() * (max - min) + min;
+		}
+
+		const interval = setInterval(function() {
+		  const timeLeft = animationEnd - Date.now();
+
+		  if (timeLeft <= 0) {
+			return clearInterval(interval);
+		  }
+
+		  const particleCount = 50 * (timeLeft / duration);
+		  
+		  // Cannon 1 (Left side)
+		  confetti(Object.assign({}, defaults, { 
+			particleCount, 
+			origin: { x: randomInRange(0.1, 0.3), y: Math.random() - 0.2 } 
+		  }));
+		  
+		  // Cannon 2 (Right side)
+		  confetti(Object.assign({}, defaults, { 
+			particleCount, 
+			origin: { x: randomInRange(0.7, 0.9), y: Math.random() - 0.2 } 
+		  }));
+		}, 250);
+
+		// 3. Finalize button pulse
+		const finalBtn = document.getElementById('finalize-button');
+		if (finalBtn) {
+			finalBtn.classList.add('ring-4', 'ring-indigo-400/50', 'scale-105', 'animate-pulse');
+		}
+	});
+	
+	
+	
+	document.body.addEventListener('htmx:afterOnLoad', function(evt) {
+		const indicator = document.getElementById('global-sync-indicator');
+		if (indicator) {
+			indicator.classList.remove('opacity-0');
+			// Hide it again after 2 seconds
+			setTimeout(() => {
+				indicator.classList.add('opacity-0');
+			}, 2000);
+		}
+	});
 </script>
+
+
+
+
 {% endblock %}

@@ -1,13 +1,15 @@
 <!-- templates\checklists\item_row.html-->
-<div class="control-row">
+<div class="control-row" id="control-row-{{ item.id }}">
     <h4>{{ item.title }}</h4>
-    <div class="btn-group">
-        <button hx-post="{% url 'save_response' item.id %}" 
-                hx-vals='{"status": "yes"}'
-                class="btn {% if response.status == 'yes' %}btn-success{% endif %}">
-            Yes
-        </button>
-        </div>
-    <input type="text" name="comment" hx-trigger="keyup changed delay:1s" 
-           hx-post="{% url 'save_comment' item.id %}" placeholder="Add notes...">
+    
+    <div id="status-container-{{ response.id }}" class="btn-group">
+        {% include 'checklists/partials/status_buttons.html' with resp=response %}
+    </div>
+
+    <input type="text" name="comment" 
+           value="{{ response.comment|default:'' }}"
+           hx-trigger="keyup changed delay:1s" 
+           hx-post="{% url 'checklists:update_response' response.id %}" 
+           hx-swap="none"
+           placeholder="Add notes...">
 </div>

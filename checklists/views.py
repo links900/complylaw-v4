@@ -9,6 +9,7 @@ from django.contrib import messages
 from django.template.loader import render_to_string
 from weasyprint import HTML
 import io
+import json
 
 
 
@@ -67,11 +68,27 @@ class UpdateResponseView(View):
             
         resp.save()
         
+        submission = resp.submission
+        total = submission.responses.count()
+        completed = submission.responses.exclude(status='pending').count()
+        
+            
         # Return the buttons partial so the clicked button turns blue
         django_response = render(request, 'checklists/partials/status_buttons.html', {'resp': resp})
         
+        
+        # Logic for multiple triggers
+        triggers = {"responseUpdated": True}
+        if total > 0 and completed == total:
+            triggers["auditComplete"] = True  # New event for the toast
+            
+        
+        django_response["HX-Trigger"] = json.dumps(triggers)
+        
+        '''
         # Trigger the progress bar update
         django_response["HX-Trigger"] = "responseUpdated"
+        '''
         
         return django_response
 
@@ -111,11 +128,22 @@ def get_progress(request, submission_id):
     # Avoid division by zero error
     percentage = int((completed_count / total_count) * 100) if total_count > 0 else 0
     
+    '''
     return render(request, 'checklists/partials/progress_bar.html', {
+        'submission': submission,
         'completion_percentage': percentage,
         'completed_count': completed_count,
         'total_count': total_count,
     })
+    '''
+    
+    context = {
+        'submission': submission,  # THIS WAS MISSING
+        'total_count': total_count,
+        'completed_count': completed_count,
+        'completion_percentage': percentage,
+    }
+    return render(request, 'checklists/partials/progress_bar.html', context)
     
 
 

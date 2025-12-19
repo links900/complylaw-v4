@@ -22,6 +22,9 @@ complylaw-v4/
 |   +-- models.py
 |   +-- services.py
 |   +-- signals.py
+|   +-- templatetags
+|   |   +-- __init__.py
+|   |   `-- math_filters.py
 |   +-- tests.py
 |   +-- urls.py
 |   `-- views.py
@@ -44,37 +47,13 @@ complylaw-v4/
 |   `-- views.py
 +-- db.sqlite3
 +-- debug.log
++-- directory_structure.txt
 +-- manage.py
 +-- media
 |   +-- logos
 |   |   `-- AI_cheatsheet.jpeg
 |   `-- reports
 |       `-- pdfs
-|           +-- Compliance_Report_abc.com_27eeb2ef.pdf
-|           +-- Compliance_Report_abc.com_71c48f2b.pdf
-|           +-- Compliance_Report_abc_0eOP8LE.com_71c48f2b.pdf
-|           +-- Compliance_Report_abc_1vrAePD.com_27eeb2ef.pdf
-|           +-- Compliance_Report_alhambra-solutions.com_c5dbf157.pdf
-|           +-- Compliance_Report_google.com_7d226d00.pdf
-|           +-- Compliance_Report_google_Fb2JFZK.com_7d226d00.pdf
-|           +-- report_1_abc.com.pdf
-|           +-- report_1_abc_HQNBZnA.com.pdf
-|           +-- report_1_alhambra-solutions.com.pdf
-|           +-- report_1_alhambra-solutions_Au8Z9KW.com.pdf
-|           +-- report_2_abc.com.pdf
-|           +-- report_2_abc_q4Y7gzK.com.pdf
-|           +-- report_3_google.com.pdf
-|           +-- report_3_google_Hc0I3Q0.com.pdf
-|           +-- report_4_alhambra-solutions.com.pdf
-|           +-- report_4_alhambra-solutions_ytb6tXR.com.pdf
-|           +-- report_5_alhambra-solutions.com.pdf
-|           +-- report_5_alhambra-solutions_b6UAF1V.com.pdf
-|           +-- report_6_alhambra-solutions.com.pdf
-|           +-- report_6_alhambra-solutions_xb4nwav.com.pdf
-|           +-- report_7_alhambra-solutions.com.pdf
-|           +-- report_7_alhambra-solutions_9FpQj0q.com.pdf
-|           +-- report_8_alhambra-solutions.com.pdf
-|           `-- report_8_alhambra-solutions_g6nPAFr.com.pdf
 +-- railway.json
 +-- railway.worker.json
 +-- render-build.sh
@@ -352,7 +331,10 @@ complylaw-v4/
 |   |   +-- partials
 |   |   |   +-- evidence_container.html
 |   |   |   +-- evidence_list.html
-|   |   |   `-- progress_bar.html
+|   |   |   +-- progress_bar.html
+|   |   |   +-- save_status.html
+|   |   |   `-- status_buttons.html
+|   |   +-- risk_roadmap.html
 |   |   `-- wizard.html
 |   +-- dashboard
 |   |   +-- home.html
@@ -370,6 +352,7 @@ complylaw-v4/
 |   +-- scanner
 |   |   +-- dashboard.html
 |   |   +-- partials
+|   |   |   +-- checklist_prompt.html
 |   |   |   +-- no_firm.html
 |   |   |   +-- run_scan_modal.html
 |   |   |   +-- scan_complete.html
@@ -379,7 +362,6 @@ complylaw-v4/
 |   |   |   +-- scan_progress.html
 |   |   |   `-- stat_card.html
 |   |   +-- scan_list.html
-|   |   +-- scan_progress_notused.html
 |   |   +-- scan_result.html
 |   |   `-- scan_status.html
 |   `-- users

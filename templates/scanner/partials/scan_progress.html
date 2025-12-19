@@ -185,7 +185,7 @@
             if (gradeBadge) gradeBadge.textContent = `Grade: ${data.grade}`;
             if (riskScore) riskScore.innerHTML = `Risk: <span class="font-medium">${data.risk_score}%</span>`;
 
-            setTimeout(() => location.reload(), 1500);
+            setTimeout(() => location.reload(), 2000);
         } else {
             const step = data.step || "Initializing";
             const status = data.status || "pending";
