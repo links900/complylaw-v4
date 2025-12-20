@@ -10,40 +10,35 @@ from django.shortcuts import get_object_or_404, render, redirect
 from django.contrib import messages
 from django.core.cache import cache
 from django.template.loader import render_to_string
-from django.contrib.staticfiles import finders
 from django.conf import settings
-from celery import current_app
+from django.utils.timezone import now
+from django.core.files.base import ContentFile
 import json
 import uuid
 import re
 import io
 from weasyprint import HTML
-from django.core.files.base import ContentFile
+
 from core.mixins import FirmRequiredMixin
-# scanner/views.py
-from .models import ScanResult as Scan  # Alias the model name
 from .models import ScanResult
 from .tasks import run_compliance_scan
-from reports.models import ComplianceReport
-from reports.models import ReportVerification
+from reports.models import ComplianceReport, ReportVerification
 from reports.utils import calculate_sha256_bytes
-from django.utils.timezone import now
 
+# Alias for convenience if needed by legacy code
+Scan = ScanResult
 
+# === HELPER / UTILITY VIEWS ===
 
-def checklist_modal_view(request, pk):
-    # Fetch the actual scan object
-    scan = get_object_or_404(Scan, pk=pk)
-    
+def checklist_modal_view(request, scan_id):
+    scan = get_object_or_404(ScanResult, scan_id=scan_id, firm=request.user.firm)
     return render(request, 'scanner/partials/checklist_prompt.html', {
         'scan': scan,
-        'debug_mode': False # Set to False now that it's dynamic
+        'debug_mode': False
     })
 
 def keep_alive(request):
-    return HttpResponse("OK")  # Call this every 10min via cron or external ping
-    
-    
+    return HttpResponse("OK")
 
 # === DASHBOARD ===
 class ScanDashboardView(LoginRequiredMixin, ListView):
@@ -53,40 +48,26 @@ class ScanDashboardView(LoginRequiredMixin, ListView):
     
     def get_queryset(self):
         return ScanResult.objects.filter(
-            #firm=self.request.user.firmprofile
             firm=self.request.user.firm
         ).select_related('firm').order_by('-scan_date')
 
-
 # === SCAN LIST ===
-# scanner/views.py
-
 class ScanListView(FirmRequiredMixin, ListView):
     model = ScanResult
     template_name = 'scanner/scan_list.html'
-    context_object_name = 'scans'  # This matches your {% for scan in scans %}
+    context_object_name = 'scans'
 
     def get_queryset(self):
-        # Filter scans by the user's firm and order by date
         return ScanResult.objects.filter(firm=self.request.user.firm).order_by('-scan_date')
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         qs = self.get_queryset()
-        
-        # 1. Get the latest scan object for the "Last Scan" stat card
         latest_scan = qs.first()
         context['latest_scan_obj'] = latest_scan
-        
-        # 2. Get the grade for the "Latest Grade" stat card
-        # Using .grade if it exists, otherwise None (template handles the dash)
         context['latest_grade'] = latest_scan.grade if latest_scan else None
-        
-        # 3. Get total count
         context['total_scans'] = qs.count()
-        
         return context
-
 
 # === RUN SCAN MODAL (HTMX) ===
 class RunScanModalView(LoginRequiredMixin, TemplateView):
@@ -97,21 +78,18 @@ class RunScanModalView(LoginRequiredMixin, TemplateView):
             return super().get(request, *args, **kwargs)
         return redirect('scanner:scan_list')
 
-
-# === START SCAN (WITH RATE LIMIT) ===
+# === START SCAN ===
 @method_decorator(ratelimit(key='user', rate='20/h', method='POST', block=True), name='dispatch')
 class StartScanView(LoginRequiredMixin, View):
-    
     def post(self, request):
-        
         domain = request.POST.get('domain', '').strip().lower()
         if not domain:
             messages.error(request, "Please enter a domain.")
-            return redirect('scanner:run_scan')
+            return redirect('scanner:scan_list')
 
         if not re.match(r'^[a-z0-9-]+(\.[a-z0-9-]+)*\.[a-z]{2,}$', domain):
             messages.error(request, "Invalid domain format.")
-            return redirect('scanner:run_scan')
+            return redirect('scanner:scan_list')
 
         if ScanResult.objects.filter(
             firm=request.user.firm,
@@ -127,43 +105,28 @@ class StartScanView(LoginRequiredMixin, View):
             status='PENDING',
             scan_id=str(uuid.uuid4())[:8]
         )
-        #print(scan.id)
-        #print(scan.status)
-
         
         run_compliance_scan.delay(scan.pk)
-        #messages.success(request, f"Scan started for <strong>{domain}</strong>.")
         messages.success(request, f"Scan started for {domain}", extra_tags="scan_started")
         
         if request.htmx:
-            #print("here in htmx")
-            return HttpResponseLocation(reverse('scanner:scan_status', args=[scan.id]))
-        #print("here after htmx check")
+            return HttpResponseLocation(reverse('scanner:scan_status', args=[scan.scan_id]))
         return redirect('scanner:dashboard')
 
+# === SCAN STATUS ===
 
-# === SCAN STATUS (Real-Time via HTMX) ===
-class ScanStatusView(LoginRequiredMixin, DetailView):
-    model = ScanResult
-    template_name = 'scanner/scan_status.html'
-    context_object_name = 'scan'
-    #print("1>>>>")
-    #print(model.id)
-    #print(model)
-
-    def get_queryset(self):
-        return ScanResult.objects.filter(firm=self.request.user.firm)
-        
-    
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        context["active_statuses"] = ("RUNNING", "PENDING")
-        return context
+# We define this as a function to match your urls.py 'views.scan_status'
+def scan_status(request, scan_id):
+    scan = get_object_or_404(ScanResult, scan_id=scan_id, firm=request.user.firm)
+    context = {
+        'scan': scan,
+        'active_statuses': ("RUNNING", "PENDING")
+    }
+    return render(request, 'scanner/scan_status.html', context)
 
 # === HTMX PARTIAL: Progress Update ===
-def scan_status_partial(request, pk):
-    scan = get_object_or_404(ScanResult, pk=pk, firm=request.user.firm)
-    
+def scan_status_partial(request, scan_id):
+    scan = get_object_or_404(ScanResult, scan_id=scan_id, firm=request.user.firm)
     context = {
         'scan': scan,
         'active_statuses': ('RUNNING', 'PENDING'),
@@ -173,30 +136,26 @@ def scan_status_partial(request, pk):
     
     if scan.status == 'COMPLETED':
         user_firm = request.user.firm
-        # FIX: Use 'subscription_tier' instead of 'tier'
         user_tier = getattr(user_firm, 'subscription_tier', '').upper()
-        
         if user_tier in ['PRO', 'ENTERPRISE']:
             html += render_to_string('scanner/partials/checklist_prompt.html', {'scan': scan}, request=request)
     
     return HttpResponse(html)
-    
 
 # === CANCEL SCAN ===
 class CancelScanView(LoginRequiredMixin, View):
-    def post(self, request, pk):
-        scan = get_object_or_404(ScanResult, pk=pk, firm=request.user.firm)
+    def post(self, request, scan_id):
+        scan = get_object_or_404(ScanResult, scan_id=scan_id, firm=request.user.firm)
         if scan.status in ['PENDING', 'RUNNING']:
             scan.status = 'CANCELLED'
-            scan.scan_log += '\n[Cancelled by user]'
+            scan.scan_log = (scan.scan_log or "") + '\n[Cancelled by user]'
             scan.save()
         return HttpResponseClientRefresh()
 
-
 # === RETRY SCAN ===
 class RetryScanView(LoginRequiredMixin, View):
-    def post(self, request, pk):
-        old_scan = get_object_or_404(ScanResult, pk=pk, firm=request.user.firm)
+    def post(self, request, scan_id):
+        old_scan = get_object_or_404(ScanResult, scan_id=scan_id, firm=request.user.firm)
         if old_scan.status != 'FAILED':
             return JsonResponse({'error': 'Only FAILED scans can be retried'}, status=400)
 
@@ -207,112 +166,66 @@ class RetryScanView(LoginRequiredMixin, View):
             scan_id=str(uuid.uuid4())[:8],
             scan_log='Retrying FAILED scan...'
         )
-        run_compliance_scan.delay(new_scan.id)
-        return HttpResponseLocation(reverse('scanner:scan_status', args=[new_scan.id]))
+        run_compliance_scan.delay(new_scan.pk)
+        return HttpResponseLocation(reverse('scanner:scan_status', args=[new_scan.scan_id]))
 
+# === GENERATE PDF ===
+def generate_pdf(request, scan_id):
+    scan = get_object_or_404(ScanResult, scan_id=scan_id, firm=request.user.firm)
 
-# === GENERATE PDF (WeasyPrint) ===ScanListView
-from django.http import HttpResponse
-from django.shortcuts import get_object_or_404
-from django.template.loader import render_to_string
-from weasyprint import HTML
-import io
-
-def generate_pdf(request, pk):
-    scan = get_object_or_404(ScanResult, id=pk, firm=request.user.firm)
-
-    # === Extract findings ===
     raw_findings = scan.get_findings() or []
-    
     findings_list = []
-
     for f in raw_findings:
-
-        # If f is a plain string (older scans), convert it to dict
         if isinstance(f, str):
             findings_list.append({
-                'standard': '—',
-                'title': f,
-                'risk_level': '—',
-                'details': f,
-                'module': 'General'
+                'standard': '—', 'title': f, 'risk_level': '—', 'details': f, 'module': 'General'
             })
-            continue
-
-        # If f is not even a dict, skip
-        if not isinstance(f, dict):
-            continue
-
-        # Normal structured finding
-        findings_list.append({
-            'standard': f.get('standard') or '—',
-            'title': f.get('title') or '—',
-            'risk_level': f.get('risk_level') or '—',
-            'details': f.get('details') or '—',
-            'module': f.get('module') or 'General'
-        })
+        elif isinstance(f, dict):
+            findings_list.append({
+                'standard': f.get('standard') or '—',
+                'title': f.get('title') or '—',
+                'risk_level': f.get('risk_level') or '—',
+                'details': f.get('details') or '—',
+                'module': f.get('module') or 'General'
+            })
 
     raw_recommendations = scan.get_recommendations() if hasattr(scan, 'get_recommendations') else []
-
-    normalized_recommendations = []
+    normalized_rec = []
     for r in raw_recommendations:
         if isinstance(r, dict):
-            normalized_recommendations.append({
+            normalized_rec.append({
                 'title': r.get('title', '—'),
                 'description': r.get('description') or r.get('details') or '—',
                 'priority': r.get('priority', '—'),
             })
         else:
-            normalized_recommendations.append({
-                'title': str(r),
-                'description': '—',
-                'priority': '—',
-            })
+            normalized_rec.append({'title': str(r), 'description': '—', 'priority': '—'})
 
     current_host = request.get_host() if request else getattr(settings, 'SITE_DOMAIN', 'localhost:8000')
     context = {
         'scan': scan,
         'findings': findings_list,
-        'recommendations': normalized_recommendations,
+        'recommendations': normalized_rec,
         'host': current_host,
-        
     }
 
-
-    # Render template
     html_string = render_to_string('reports/pdf_template.html', context)
     html = HTML(string=html_string, base_url=request.build_absolute_uri('/'))
 
-    '''
-    pdf_file = io.BytesIO()
-    html.write_pdf(pdf_file)
-    '''
-   # === Generate PDF ONCE ===
     pdf_buffer = io.BytesIO()
     html.write_pdf(pdf_buffer)
     pdf_bytes = pdf_buffer.getvalue()
     pdf_buffer.close()
 
-    # === Hash FINAL PDF BYTES ===
     pdf_hash = calculate_sha256_bytes(pdf_bytes)
-
-    # === File name ===
     pdf_filename = f"Compliance_Report_{scan.domain}_{scan.scan_id}.pdf"
 
-    # === Save PDF (single source of truth) ===
     report, _ = ComplianceReport.objects.get_or_create(
         scan=scan,
         defaults={'generated_at': now()}
     )
+    report.pdf_file.save(pdf_filename, ContentFile(pdf_bytes), save=True)
 
-    # Always overwrite to guarantee integrity
-    report.pdf_file.save(
-        pdf_filename,
-        ContentFile(pdf_bytes),
-        save=True
-    )
-
-    # === Save VERIFICATION RECORD (hash only) ===
     ReportVerification.objects.update_or_create(
         report_id=scan.scan_id,
         defaults={
@@ -323,24 +236,10 @@ def generate_pdf(request, pk):
         }
     )
 
-    # === Serve EXACT stored file ===
     report.pdf_file.open('rb')
-
-    response = HttpResponse(
-        report.pdf_file.read(),
-        content_type='application/pdf'
-    )
+    response = HttpResponse(report.pdf_file.read(), content_type='application/pdf')
     response['Content-Disposition'] = f'attachment; filename="{pdf_filename}"'
-
     return response
-    
-    
-    
-
-from django.http import HttpResponse
 
 def rate_limit_exceeded_view(request, exception=None):
-    return HttpResponse(
-        "You have exceeded the request limit. Please try again later.",
-        status=429
-    )
+    return HttpResponse("You have exceeded the request limit. Please try again later.", status=429)

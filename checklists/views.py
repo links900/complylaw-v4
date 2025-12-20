@@ -1,264 +1,305 @@
-#checklists\views.py
-
-from django.views.generic import ListView, View
-from django.shortcuts import get_object_or_404, render
-from django.http import HttpResponse, HttpResponseForbidden
-from .models import ChecklistSubmission, ChecklistResponse, EvidenceFile
-from django.shortcuts import redirect
-from django.contrib import messages
-from django.template.loader import render_to_string
-from weasyprint import HTML
+# checklists/views.py
 
 import io
 import json
+from django.views.generic import ListView, View
+from django.shortcuts import get_object_or_404, render, redirect
+from django.http import HttpResponse, HttpResponseForbidden, JsonResponse
+from django.contrib import messages
+from django.template.loader import render_to_string
+from django.utils import timezone
+from weasyprint import HTML
+from django.db import transaction
 
+# Model Imports
+from scanner.models import ScanResult  
+from .models import ChecklistSubmission, ChecklistResponse, EvidenceFile, ChecklistTemplate
 
-
-def checklist_detail_view(request, scan_id):
-    # Fetch the submission linked to the scan
-    submission = get_object_or_404(ChecklistSubmission, scan_id=scan_id)
-    
-    # Get the calculations from the model methods we just created
-    overall_score = submission.calculate_compliance_score()
-    risk_stats = submission.get_risk_breakdown()
-    
-    context = {
-        'submission': submission,
-        'overall_score': overall_score,
-        'risk_stats': risk_stats, # This is the dictionary with HIGH, MEDIUM, LOW
-    }
-    
-    return render(request, 'checklists/compliance_dashboard.html', context)
+# --- 1. CORE WIZARD VIEWS ---
 
 class ChecklistWizardView(ListView):
+    """
+    Main interface for performing the manual review.
+    Uses 'scan_id' (string) to manage the audit workflow.
+    """
     template_name = 'checklists/wizard.html'
     context_object_name = 'responses'
 
     def dispatch(self, request, *args, **kwargs):
-        scan_id = self.kwargs.get('scan_id')
-        submission = ChecklistSubmission.objects.filter(scan_id=scan_id).first()
+        scan_id_str = self.kwargs.get('scan_id')
+        submission = ChecklistSubmission.objects.filter(scan__scan_id=scan_id_str).first()
         
-        # If the audit is already locked, don't show the wizard.
-        # Send them straight to the compliance dashboard/report.
+        # If audit is already locked, prevent editing and send to report
         if submission and submission.is_locked:
-            return redirect('checklists:compliance_report', scan_id=scan_id)
+            messages.info(request, "This audit is locked and can no longer be edited.")
+            return redirect('checklists:compliance_report', scan_id=scan_id_str)
             
         return super().dispatch(request, *args, **kwargs)
-        
-        
+
     def get_queryset(self):
-        scan_id = self.kwargs.get('scan_id')
-        submission, created = ChecklistSubmission.objects.get_or_create(
-            scan_id=scan_id,
-            defaults={'firm': self.request.user.firm}
-        )
+        scan_id_str = self.kwargs.get('scan_id')
+        scan_obj = get_object_or_404(ScanResult, scan_id=scan_id_str)
 
-        if created:
-            from .models import ChecklistTemplate, ChecklistResponse
-            templates = ChecklistTemplate.objects.filter(active=True)
-            for t in templates:
-                ChecklistResponse.objects.get_or_create(
-                    submission=submission,
-                    template=t,
-                    defaults={'status': 'pending'}
+        # 1. Check if submission exists first to avoid unnecessary transaction noise
+        submission = ChecklistSubmission.objects.filter(scan=scan_obj).first()
+
+        # 2. If it doesn't exist, create it and its associated responses atomically
+        if not submission:
+            with transaction.atomic():
+                submission = ChecklistSubmission.objects.create(
+                    scan=scan_obj,
+                    firm=self.request.user.firm
                 )
+                
+                templates = ChecklistTemplate.objects.filter(active=True)
+                responses = [
+                    ChecklistResponse(
+                        submission=submission,
+                        template=t,
+                        status='pending'
+                    ) for t in templates
+                ]
+                ChecklistResponse.objects.bulk_create(responses)
 
-        return submission.responses.select_related('template').order_by('template__code')
-
+        # 3. Return the optimized queryset
+        # select_related('template') joins the question data
+        # prefetch_related('evidence_files') gets all uploads in one efficient query
+        return submission.responses.select_related('template')\
+                                   .prefetch_related('evidence_files')\
+                                   .order_by('template__code')
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        submission = ChecklistSubmission.objects.get(scan_id=self.kwargs.get('scan_id'))
         
-        # --- NEW LOGIC: Calculate initial progress for the template ---
-        responses = submission.responses.all()
-        total_count = responses.count()
-        completed_count = responses.exclude(status='pending').count()
-        percentage = int((completed_count / total_count) * 100) if total_count > 0 else 0
+        # Use the already fetched queryset from the context to avoid re-querying
+        responses = context['responses']
+        total_count = len(responses)
+        completed_count = sum(1 for r in responses if r.status != 'pending')
         
-        context['submission'] = submission
-        context['completion_percentage'] = percentage
-        context['completed_count'] = completed_count
-        context['total_count'] = total_count
-        # -------------------------------------------------------------
+        context.update({
+            'submission': get_object_or_404(ChecklistSubmission, scan__scan_id=self.kwargs.get('scan_id')),
+            'completion_percentage': int((completed_count / total_count) * 100) if total_count > 0 else 0,
+            'completed_count': completed_count,
+            'total_count': total_count,
+        })
         return context
 
 
-
 class UpdateResponseView(View):
+    """
+    HTMX-driven view to update individual checklist answers.
+    """
     def post(self, request, response_id):
         resp = get_object_or_404(ChecklistResponse, id=response_id)
         
+        if resp.submission.is_locked:
+            return HttpResponseForbidden("Cannot update a locked audit.")
+
+        # Update fields if present in POST data
         if 'status' in request.POST:
             resp.status = request.POST.get('status')
         if 'comment' in request.POST:
             resp.comment = request.POST.get('comment')
-            
         resp.save()
         
         submission = resp.submission
         total = submission.responses.count()
         completed = submission.responses.exclude(status='pending').count()
         
-            
-        # Return the buttons partial so the clicked button turns blue
+        # Prepare HTMX Response
         django_response = render(request, 'checklists/partials/status_buttons.html', {'resp': resp})
         
-        
-        # Logic for multiple triggers
-        # --- UPDATE TRIGGERS HERE ---
-        # refreshScore: Tells the dashboard to recalculate
-        # responseUpdated: Tells the wizard's progress bar to move
         triggers = {
-            "responseUpdated": True, # For the progress bar
-            "refreshScore": True     # THIS triggers the dashboard update
+            "responseUpdated": True, 
+            "refreshScore": True     
         }
         
-        # Signal if the entire audit is finished
+        # Signal the UI if the entire audit is ready for completion
         if total > 0 and completed == total:
-            triggers["auditComplete"] = True  # New event for the toast
+            triggers["auditComplete"] = True  
             
         django_response["HX-Trigger"] = json.dumps(triggers)
         return django_response 
-            
-        
-        
-
-class EvidenceUploadView(View):
-    def post(self, request, response_id):
-        response = get_object_or_404(ChecklistResponse, id=response_id)
-        if response.submission.is_locked: return HttpResponseForbidden()
-
-        files = request.FILES.getlist('evidence')
-        for f in files:
-            EvidenceFile.objects.create(
-                response=response, file=f, filename=f.name, uploaded_by=request.user
-            )
-        return render(request, 'checklists/partials/evidence_list.html', {'response': response})
 
 
+# --- 2. REPORTING & DASHBOARD VIEWS ---
 
-def delete_evidence(request, evidence_id):
-    evidence = get_object_or_404(EvidenceFile, id=evidence_id)
-    # Security: check if audit is locked
-    if evidence.response.submission.is_locked:
-        return HttpResponseForbidden()
-        
-    evidence.delete()
-    return HttpResponse("") # Returns empty string so HTMX removes the element
+def compliance_report(request, scan_id):
+    """ 
+    The 'Gap Analysis' view. Shows compliance scores and risks.
+    """
+    scan = get_object_or_404(ScanResult, scan_id=scan_id)
     
+    # Ensure a submission exists (Saas-safe: creates if missing)
+    submission, _ = ChecklistSubmission.objects.get_or_create(
+        scan=scan,
+        defaults={'firm': scan.firm}
+    )
 
-def get_progress(request, submission_id):
-    submission = get_object_or_404(ChecklistSubmission, id=submission_id)
-    # This counts all responses generated for this specific audit
-    responses = submission.responses.all()
+    # Pre-fetch to avoid N+1 issues in the gap analysis table
     
-    total_count = responses.count()
-    # Count only those that are 'yes', 'no', or 'partial' (not 'pending')
-    completed_count = responses.exclude(status='pending').count()
-    
-    # Avoid division by zero error
-    percentage = int((completed_count / total_count) * 100) if total_count > 0 else 0
-    
-    '''
-    return render(request, 'checklists/partials/progress_bar.html', {
-        'submission': submission,
-        'completion_percentage': percentage,
-        'completed_count': completed_count,
-        'total_count': total_count,
-    })
-    '''
-    
+    responses = submission.responses.select_related('template', 'submission__firm').all().order_by('-template__risk_impact')
+
+    # UI Styling Configuration Object
+    risk_config = [
+        {'level': 'HIGH', 'color': 'rose', 'icon': 'exclamation-circle'},
+        {'level': 'MEDIUM', 'color': 'amber', 'icon': 'information-circle'},
+        {'level': 'LOW', 'color': 'emerald', 'icon': 'check-circle'},
+    ]
+
     context = {
-        'submission': submission,  # THIS WAS MISSING
-        'total_count': total_count,
-        'completed_count': completed_count,
-        'completion_percentage': percentage,
+        'submission': submission,
+        'overall_score': submission.calculate_compliance_score() or 0,
+        'risk_stats': submission.get_risk_breakdown(), # Method should be in models.py
+        'responses': responses,
+        'risk_config': risk_config, 
     }
-    return render(request, 'checklists/partials/progress_bar.html', context)
-    
-
+    return render(request, 'checklists/compliance_dashboard.html', context)
 
 
 def complete_audit(request, submission_id):
-    submission = get_object_or_404(ChecklistSubmission, id=submission_id)
+    """
+    Locks the submission so no further changes can be made.
+    """
+    submission = get_object_or_404(ChecklistSubmission, id=submission_id, firm=request.user.firm)
     
     if request.method == "POST":
         submission.is_locked = True
-        submission.status = 'completed'
         submission.save()
-        
-        messages.success(request, "Audit completed successfully! Your report is being generated.")
-        return redirect('reports:report_detail', scan_id=submission.scan_id)
+        messages.success(request, "Audit finalized and locked successfully.")
+        return redirect('checklists:compliance_report', scan_id=submission.scan.scan_id)
     
-    return redirect('checklists:wizard', scan_id=submission.scan_id)
-    
-    
+    return redirect('checklists:wizard', scan_id=submission.scan.scan_id)
 
 
-def get_roadmap(request, submission_id):
-    submission = get_object_or_404(ChecklistSubmission, id=submission_id)
+# --- 3. UTILITY & AJAX VIEWS ---
+
+def get_progress(request, submission_id):
+    """ Returns a partial HTML for the progress bar. """
+    # Added select_related to make the lookup more efficient
+    submission = get_object_or_404(ChecklistSubmission.objects.select_related('scan'), id=submission_id)
     responses = submission.responses.all()
     total = responses.count()
     completed = responses.exclude(status='pending').count()
     
-    context = {
-        'submission': submission,
-        'total_count': total,
-        'completed_count': completed,
+    return render(request, 'checklists/partials/progress_bar.html', {
+        'submission': submission,  # <--- EXACT LINE TO ADD
         'completion_percentage': int((completed / total) * 100) if total > 0 else 0,
-    }
-    return render(request, 'checklists/risk_roadmap.html', context)
-    
-    
+        'completed_count': completed,
+        'total_count': total,
+    })
+
+
+class EvidenceUploadView(View):
+    """ Handles file uploads for compliance evidence. """
+    def post(self, request, response_id):
+        response = get_object_or_404(ChecklistResponse, id=response_id)
+        if response.submission.is_locked: 
+            return HttpResponseForbidden("Audit is locked.")
+
+        files = request.FILES.getlist('evidence')
+        for f in files:
+            EvidenceFile.objects.create(
+                response=response, 
+                file=f, 
+                filename=f.name, 
+                uploaded_by=request.user
+            )
+        return render(request, 'checklists/partials/evidence_list.html', {'response': response})
+
+
+def delete_submission(request, submission_id):
+    """ Archival view for deleting audit records. """
+    if request.method == 'POST':
+        submission = get_object_or_404(
+            ChecklistSubmission, 
+            id=submission_id, 
+            firm=request.user.firm
+        )
+        submission.delete()
+        messages.success(request, "Audit record successfully archived.")
+    return redirect('checklists:submission_list')
+
 
 def generate_checklist_pdf(request, pk):
-    # Fetch the manual audit submission
+    """ Generates a PDF roadmap using WeasyPrint. """
     submission = get_object_or_404(ChecklistSubmission, id=pk, firm=request.user.firm)
-    
-    # Get all responses for this submission
-    responses = submission.responses.all().select_related('question')
+    responses = submission.responses.all().select_related('template')
 
     context = {
         'submission': submission,
         'responses': responses,
         'firm': request.user.firm,
-        'generated_at': now(),
+        'generated_at': timezone.now(),
     }
 
-    # 1. Render to HTML string
     html_string = render_to_string('checklists/pdf_roadmap_template.html', context)
-    
-    # 2. Generate PDF
     html = HTML(string=html_string, base_url=request.build_absolute_uri('/'))
+    
     pdf_buffer = io.BytesIO()
     html.write_pdf(pdf_buffer)
     pdf_bytes = pdf_buffer.getvalue()
     pdf_buffer.close()
 
-    # 3. Return as Download
     response = HttpResponse(pdf_bytes, content_type='application/pdf')
-    filename = f"Roadmap_{request.user.firm.firm_name}_{submission.id}.pdf"
+    filename = f"Compliance_Report_{submission.scan.scan_id}.pdf"
     response['Content-Disposition'] = f'attachment; filename="{filename}"'
-    
     return response
+
+
+def submission_list(request):
+    """ Overview of all audits within the firm. """
+    submissions = ChecklistSubmission.objects.filter(
+        firm=request.user.firm
+    ).select_related('scan').order_by('-created_at')
+    
+    return render(request, 'checklists/submission_list.html', {'submissions': submissions})
     
     
-def compliance_report(request, scan_id):
-    submission = get_object_or_404(ChecklistSubmission, scan_id=scan_id)
+
+
+def get_roadmap(request, scan_id):
+    # Fetch the submission and its related scan
+    submission = get_object_or_404(
+        ChecklistSubmission.objects.select_related('scan'), 
+        scan__scan_id=scan_id, 
+        firm=request.user.firm
+    )
     
-    # Ensure we are getting ALL responses, even if the audit is locked
-    responses = submission.responses.select_related('template').all()
+    # Get all responses for stats calculation
+    all_responses = submission.responses.select_related('template')
     
-    # Using the methods we added to the ChecklistSubmission model
+    # Calculate stats (Fixes the VariableDoesNotExist errors)
+    total_count = all_responses.count()
+    completed_count = all_responses.exclude(status='pending').count()
+    completion_percentage = int((completed_count / total_count) * 100) if total_count > 0 else 0
+    
+    # Filter for the roadmap (items requiring action)
+    # Prefetch evidence_files to avoid N+1 queries in the loop
+    roadmap_responses = all_responses.exclude(status='yes').prefetch_related('evidence_files').order_by('template__code')
+
     context = {
         'submission': submission,
+        'responses': roadmap_responses,
         'overall_score': submission.calculate_compliance_score(),
-        'risk_stats': submission.get_risk_breakdown(),
-        'responses': responses, # Pass this explicitly to be safe
+        'last_scan': submission.scan,           # FIX 1
+        'completion_percentage': completion_percentage, # FIX 2
+        'total_count': total_count,             # FIX 3
+        'completed_count': completed_count,     # FIX 4
     }
-    return render(request, 'checklists/compliance_dashboard.html', context)
+    return render(request, 'checklists/risk_roadmap.html', context)
+
+def delete_evidence(request, evidence_id):
+    """
+    Deletes an evidence file. Used via HTMX/AJAX in the wizard.
+    """
+    evidence = get_object_or_404(EvidenceFile, id=evidence_id)
     
+    # Security: Ensure audit isn't locked and user belongs to the right firm
+    if evidence.response.submission.is_locked:
+        return HttpResponseForbidden("Cannot delete evidence from a locked audit.")
     
-def submission_list(request):
-    submissions = ChecklistSubmission.objects.filter(firm=request.user.firm)
-    return render(request, 'checklists/submission_list.html', {'submissions': submissions})
+    if evidence.response.submission.firm != request.user.firm:
+        return HttpResponseForbidden("Unauthorized.")
+
+    evidence.delete()
+    return HttpResponse("") # Return empty string for HTMX to remove the element

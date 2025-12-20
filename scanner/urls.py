@@ -1,4 +1,6 @@
 # scanner/urls.py
+
+
 from django.urls import path
 from . import views
 
@@ -11,29 +13,23 @@ urlpatterns = [
     # Scan List
     path('list/', views.ScanListView.as_view(), name='scan_list'),
 
-    # Start Scan – POST (function)
+    # Start Scan
     path('run/', views.StartScanView.as_view(), name='run_scan'),
-
-    # GET: HTMX modal
     path('run/modal/', views.RunScanModalView.as_view(), name='run_modal'),
 
-    # Scan Details + HTMX Partial
-    path('scan/<int:pk>/', views.ScanStatusView.as_view(), name='scan_status'),
-    path('scan/<int:pk>/partial/', views.scan_status_partial, name='scan_status_partial'),
+    # --- ALL SCAN DETAILS AND ACTIONS UPDATED TO STRING-BASED ID ---
+    
+    # Details & Progress
+    path('scan/<str:scan_id>/', views.scan_status, name='scan_status'),
+    path('scan/<str:scan_id>/partial/', views.scan_status_partial, name='scan_status_partial'),
 
     # PDF Generation
-    path('scan/<int:pk>/pdf/', views.generate_pdf, name='pdf'),
+    path('scan/<str:scan_id>/pdf/', views.generate_pdf, name='pdf'),
 
     # Actions
-    path('scan/<int:pk>/cancel/', views.CancelScanView.as_view(), name='cancel'),
-    path('scan/<int:pk>/retry/', views.RetryScanView.as_view(), name='retry'),
+    path('scan/<str:scan_id>/cancel/', views.CancelScanView.as_view(), name='cancel'),
+    path('scan/<str:scan_id>/retry/', views.RetryScanView.as_view(), name='retry'),
     
-    
-    
-    
-    
-    #path('test-modal/', views.test_modal_view, name='test_modal'),
-    path('scan/<int:pk>/checklist-modal/', views.checklist_modal_view, name='checklist_modal'),
-    
-    
+    # Modals
+    path('scan/<str:scan_id>/checklist-modal/', views.checklist_modal_view, name='checklist_modal'),
 ]

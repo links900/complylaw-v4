@@ -15,7 +15,7 @@
 			</p>
             
             <div class="space-y-3">
-                <a href="{% url 'checklists:wizard' scan_id=scan.id %}" class="block w-full px-5 py-4 text-sm font-bold text-white bg-indigo-600 rounded-xl hover:bg-indigo-700 shadow-lg shadow-indigo-200 transition-all">
+                <a href="{% url 'checklists:wizard' scan_id=scan.scan_id %}" class="block w-full px-5 py-4 text-sm font-bold text-white bg-indigo-600 rounded-xl hover:bg-indigo-700 shadow-lg shadow-indigo-200 transition-all">
                     Start Manual Review
                 </a>
                 <button type="button" onclick="document.getElementById('checklist-modal').classList.add('hidden')" class="block w-full px-5 py-3 text-sm font-medium text-gray-400 hover:text-gray-600 transition-colors">

@@ -63,7 +63,7 @@
 
             {% if submission %}
             <section id="roadmap-container" 
-                     hx-get="{% url 'checklists:get_roadmap' submission.id %}" 
+                     hx-get="{% url 'checklists:roadmap' submission.scan.scan_id %}"
                      hx-trigger="load, responseUpdated from:body"
                      class="animate-fade-in">
                 {% include 'checklists/risk_roadmap.html' %}

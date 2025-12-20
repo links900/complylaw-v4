@@ -93,7 +93,7 @@
                 </div>
             </div>
             
-            <a href="{% url 'scanner:pdf' scan.id %}" class="w-full sm:w-auto inline-flex items-center justify-center px-8 py-4 bg-white border border-slate-200 rounded-2xl text-sm font-black text-slate-700 hover:bg-slate-50 transition-all shadow-xl shadow-slate-200/50 gap-3 group">
+            <a href="{% url 'scanner:pdf' scan.scan_id %}" class="w-full sm:w-auto inline-flex items-center justify-center px-8 py-4 bg-white border border-slate-200 rounded-2xl text-sm font-black text-slate-700 hover:bg-slate-50 transition-all shadow-xl shadow-slate-200/50 gap-3 group">
                 <svg class="w-5 h-5 text-rose-500 group-hover:scale-110 transition-transform" fill="currentColor" viewBox="0 0 20 20"><path d="M10 18a8 8 0 100-16 8 8 0 000 16zm-1-11a1 1 0 112 0v4a1 1 0 11-2 0V7zm1 8a1 1 0 100-2 1 1 0 000 2z"/></svg>
                 Download Technical Report
             </a>
@@ -115,7 +115,7 @@
                 <p class="text-indigo-100/80 text-sm font-medium max-w-md mt-1">Technical analysis is finished. Now complete the procedural questionnaire to generate your final certificate.</p>
             </div>
         </div>
-        <a href="{% url 'checklists:wizard' scan.id %}" class="relative z-10 bg-white text-indigo-700 px-12 py-5 rounded-2xl font-black hover:shadow-2xl hover:bg-indigo-50 transition-all text-xl shadow-xl flex items-center gap-3">
+        <a href="{% url 'checklists:wizard' scan.scan_id %}" class="relative z-10 bg-white text-indigo-700 px-12 py-5 rounded-2xl font-black hover:shadow-2xl hover:bg-indigo-50 transition-all text-xl shadow-xl flex items-center gap-3">
             Start Audit 
             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M13 7l5 5m0 0l-5 5m5-5H6"/></svg>
         </a>

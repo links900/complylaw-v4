@@ -52,7 +52,7 @@
             </div>
             
             <div id="scan-progress" 
-                 hx-get="{% url 'scanner:scan_status_partial' scan.id %}" 
+                 hx-get="{% url 'scanner:scan_status_partial' scan.scan_id %}" 
                  hx-trigger="refreshStatus from:body" 
                  hx-swap="outerHTML">
                 {% include 'scanner/partials/scan_progress.html' %}
@@ -70,7 +70,7 @@
         window.modalTriggered = false;
 
         function connectWebSocket() {
-            const scanId = "{{ scan.id }}";
+            const scanId = "{{ scan.scan_id }}";
             const wsScheme = window.location.protocol === "https:" ? "wss" : "ws";
             const wsUrl = `${wsScheme}://${window.location.host}/ws/scan/${scanId}/`;
             

@@ -54,10 +54,10 @@
                         {{ scan.scan_date|date:"M d, Y H:i" }}
                     </td>
                     <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                        <a href="{% url 'scanner:scan_status' scan.id %}" class="text-blue-600 hover:text-blue-900 mr-3">
+                        <a href="{% url 'scanner:scan_status' scan.scan_id %}" class="text-blue-600 hover:text-blue-900 mr-3">
                             View Status
                         </a>
-                        <a href="{% url 'scanner:pdf' scan.id %}" class="text-green-600 hover:text-green-900">
+                        <a href="{% url 'scanner:pdf' scan.scan_id %}" class="text-green-600 hover:text-green-900">
                             Download PDF
                         </a>
                     </td>
