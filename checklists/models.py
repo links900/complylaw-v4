@@ -36,6 +36,57 @@ class ChecklistSubmission(models.Model):
     completed_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True)
     is_locked = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
+    
+    
+    def __str__(self):
+        return f"Submission for {self.firm.firm_name} - {self.created_at.date()}"
+        
+    def calculate_compliance_score(self):
+        """
+        Calculates a percentage score based on weighted responses.
+        Formula: (Sum of earned weights / Total possible weights) * 100
+        """
+        responses = self.responses.select_related('template').all()
+        
+        if not responses.exists():
+            return 0
+
+        total_possible_weight = 0
+        earned_weight = 0
+
+        for resp in responses:
+            weight = resp.template.weight
+            total_possible_weight += weight
+
+            if resp.status == 'yes':
+                earned_weight += weight
+            elif resp.status == 'partial':
+                earned_weight += (weight * 0.5)
+            # 'no' and 'na' contribute 0 to earned_weight
+
+        if total_possible_weight == 0:
+            return 0
+
+        score = (earned_weight / total_possible_weight) * 100
+        return round(score, 2)
+        
+    def get_risk_breakdown(self):
+        from .models import RiskImpact
+        breakdown = {}
+        
+        for impact in RiskImpact.values:
+            responses = self.responses.filter(template__risk_impact=impact)
+            total = responses.count()
+            if total > 0:
+                yes_count = responses.filter(status='yes').count()
+                breakdown[impact] = {
+                    "percentage": round((yes_count / total) * 100, 2),
+                    "count": total
+                }
+        return breakdown
+        
+        
+        
 
 class ChecklistResponse(models.Model):
     STATUS_CHOICES = [("yes", "Yes"), ("no", "No"), ("partial", "Partial"), ("na", "N/A")]
@@ -53,3 +104,5 @@ class EvidenceFile(models.Model):
     filename = models.CharField(max_length=255)
     uploaded_at = models.DateTimeField(auto_now_add=True)
     uploaded_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+    
+    

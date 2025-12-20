@@ -8,17 +8,44 @@ from django.shortcuts import redirect
 from django.contrib import messages
 from django.template.loader import render_to_string
 from weasyprint import HTML
+
 import io
 import json
 
 
 
-
+def checklist_detail_view(request, scan_id):
+    # Fetch the submission linked to the scan
+    submission = get_object_or_404(ChecklistSubmission, scan_id=scan_id)
+    
+    # Get the calculations from the model methods we just created
+    overall_score = submission.calculate_compliance_score()
+    risk_stats = submission.get_risk_breakdown()
+    
+    context = {
+        'submission': submission,
+        'overall_score': overall_score,
+        'risk_stats': risk_stats, # This is the dictionary with HIGH, MEDIUM, LOW
+    }
+    
+    return render(request, 'checklists/compliance_dashboard.html', context)
 
 class ChecklistWizardView(ListView):
     template_name = 'checklists/wizard.html'
     context_object_name = 'responses'
 
+    def dispatch(self, request, *args, **kwargs):
+        scan_id = self.kwargs.get('scan_id')
+        submission = ChecklistSubmission.objects.filter(scan_id=scan_id).first()
+        
+        # If the audit is already locked, don't show the wizard.
+        # Send them straight to the compliance dashboard/report.
+        if submission and submission.is_locked:
+            return redirect('checklists:compliance_report', scan_id=scan_id)
+            
+        return super().dispatch(request, *args, **kwargs)
+        
+        
     def get_queryset(self):
         scan_id = self.kwargs.get('scan_id')
         submission, created = ChecklistSubmission.objects.get_or_create(
@@ -78,19 +105,23 @@ class UpdateResponseView(View):
         
         
         # Logic for multiple triggers
-        triggers = {"responseUpdated": True}
+        # --- UPDATE TRIGGERS HERE ---
+        # refreshScore: Tells the dashboard to recalculate
+        # responseUpdated: Tells the wizard's progress bar to move
+        triggers = {
+            "responseUpdated": True, # For the progress bar
+            "refreshScore": True     # THIS triggers the dashboard update
+        }
+        
+        # Signal if the entire audit is finished
         if total > 0 and completed == total:
             triggers["auditComplete"] = True  # New event for the toast
             
-        
         django_response["HX-Trigger"] = json.dumps(triggers)
+        return django_response 
+            
         
-        '''
-        # Trigger the progress bar update
-        django_response["HX-Trigger"] = "responseUpdated"
-        '''
         
-        return django_response
 
 class EvidenceUploadView(View):
     def post(self, request, response_id):
@@ -210,3 +241,24 @@ def generate_checklist_pdf(request, pk):
     response['Content-Disposition'] = f'attachment; filename="{filename}"'
     
     return response
+    
+    
+def compliance_report(request, scan_id):
+    submission = get_object_or_404(ChecklistSubmission, scan_id=scan_id)
+    
+    # Ensure we are getting ALL responses, even if the audit is locked
+    responses = submission.responses.select_related('template').all()
+    
+    # Using the methods we added to the ChecklistSubmission model
+    context = {
+        'submission': submission,
+        'overall_score': submission.calculate_compliance_score(),
+        'risk_stats': submission.get_risk_breakdown(),
+        'responses': responses, # Pass this explicitly to be safe
+    }
+    return render(request, 'checklists/compliance_dashboard.html', context)
+    
+    
+def submission_list(request):
+    submissions = ChecklistSubmission.objects.filter(firm=request.user.firm)
+    return render(request, 'checklists/submission_list.html', {'submissions': submissions})

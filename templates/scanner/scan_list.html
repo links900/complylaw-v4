@@ -106,6 +106,45 @@
                       </a>
                     {% endif %}
                   </td>
+				  <td class="px-6 py-4">
+					<div class="flex gap-3">
+						<a href="{% url 'scanner:scan_status' scan.id %}" class="text-blue-600">Technical Report</a>
+
+						{% if scan.checklist_submission %}
+							<a href="{% url 'checklists:wizard' scan.checklist_submission.id %}" 
+							   class="text-indigo-600 font-bold">
+							   Resume Audit
+							</a>
+						{% else %}
+						    
+							
+							<form action="{% url 'checklists:wizard' scan.id %}" method="GET">
+								<button type="submit" class="text-green-600 font-bold">Start Manual Audit</button>
+							</form>
+							
+							
+							
+						{% endif %}
+					</div>
+				  </td>
+				  <td class="px-6 py-4">
+					{% if scan.status == 'completed' %}
+						<div class="flex items-center gap-3">
+							<a href="{% url 'scanner:scan_status' scan.id %}" class="text-blue-600 hover:underline text-sm font-medium">Technical Report</a>
+							
+							<span class="text-gray-300">|</span>
+
+							<a href="{% url 'checklists:wizard' scan.id %}" 
+							   class="inline-flex items-center px-3 py-1 bg-indigo-50 text-indigo-700 rounded-md text-xs font-bold border border-indigo-100 hover:bg-indigo-100 transition-colors">
+								{% if scan.checklist_submission.is_locked %}
+									View Compliance
+								{% else %}
+									Manual Audit
+								{% endif %}
+							</a>
+						</div>
+					{% endif %}
+				</td>
                 </tr>
               {% empty %}
                 <tr>

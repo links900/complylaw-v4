@@ -17,8 +17,10 @@ complylaw-v4/
 |   +-- admin.py
 |   +-- apps.py
 |   +-- management
+|   |   +-- __init__.py
 |   |   `-- commands
-|   |       `-- seed_compliance.py
+|   |       +-- __init__.py
+|   |       `-- seed_gdpr_checklist.py
 |   +-- models.py
 |   +-- services.py
 |   +-- signals.py
@@ -50,10 +52,31 @@ complylaw-v4/
 +-- directory_structure.txt
 +-- manage.py
 +-- media
+|   +-- evidence
+|   |   `-- 2025
+|   |       `-- 12
+|   |           `-- 20
+|   |               `-- tests.py
 |   +-- logos
 |   |   `-- AI_cheatsheet.jpeg
 |   `-- reports
 |       `-- pdfs
+|           +-- Compliance_Report_alhambra-solutions.com_8edd505e.pdf
+|           +-- Compliance_Report_smithlaw.com_9d11b9cb.pdf
+|           +-- report_1_abc.com.pdf
+|           +-- report_1_abc_SrMCkfl.com.pdf
+|           +-- report_24_alhambra-solutions.com.pdf
+|           +-- report_24_alhambra-solutions_rTjrKeH.com.pdf
+|           +-- report_25_smithlaw.com.pdf
+|           +-- report_25_smithlaw_gSwCNln.com.pdf
+|           +-- report_26_smithlaw.com.pdf
+|           +-- report_26_smithlaw_rtUaPxy.com.pdf
+|           +-- report_27_alhambra-solutions.com.pdf
+|           +-- report_27_alhambra-solutions_kqddTPF.com.pdf
+|           +-- report_28_alhambra-solutions.com.pdf
+|           +-- report_28_alhambra-solutions_kxIexib.com.pdf
+|           +-- report_2_abc.com.pdf
+|           `-- report_2_abc_0C86EKO.com.pdf
 +-- railway.json
 +-- railway.worker.json
 +-- render-build.sh
@@ -327,6 +350,7 @@ complylaw-v4/
 |   |   +-- pricing.html
 |   |   `-- success.html
 |   +-- checklists
+|   |   +-- compliance_dashboard.html
 |   |   +-- item_row.html
 |   |   +-- partials
 |   |   |   +-- evidence_container.html
@@ -335,6 +359,7 @@ complylaw-v4/
 |   |   |   +-- save_status.html
 |   |   |   `-- status_buttons.html
 |   |   +-- risk_roadmap.html
+|   |   +-- wizard - two buttons footer.html
 |   |   `-- wizard.html
 |   +-- dashboard
 |   |   +-- home.html

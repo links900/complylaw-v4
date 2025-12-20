@@ -61,6 +61,10 @@
                         <a href="{% url 'dashboard:home' %}" class="text-gray-700 hover:text-blue-600">Dashboard</a>
                         <a href="{% url 'scanner:scan_list' %}" class="text-gray-700 hover:text-blue-600">Scans</a>
                         <a href="{% url 'reports:report_list' %}" class="text-gray-700 hover:text-blue-600">Reports</a>
+						<a href="{% url 'checklists:submission_list' %}" class="flex items-center gap-2">
+        <svg class="w-5 h-5" ...></svg>
+        <span>Compliance Audits</span>
+    </a>
                         <a href="{% url 'users:profile' %}" class="text-gray-700 hover:text-blue-600">Profile</a>
                         <form method="post" action="{% url 'account_logout' %}" class="inline">
                             {% csrf_token %}
@@ -106,5 +110,15 @@
    
 
     {% block scripts %}{% endblock %}
+	
+<div id="modal-container"></div>
+
+
+<style>
+.htmx-swapping #dashboard-content {
+    opacity: 0;
+    transition: opacity 200ms ease-out;
+}
+</style>
 </body>
 </html>
