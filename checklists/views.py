@@ -67,6 +67,8 @@ class ChecklistWizardView(ListView):
         return submission.responses.select_related('template')\
                                    .prefetch_related('evidence_files')\
                                    .order_by('template__code')
+                                   
+                                   
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         

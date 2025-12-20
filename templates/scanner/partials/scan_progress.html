@@ -101,23 +101,21 @@
         {% endif %}
     </div>
 
-    {% if scan.status == 'COMPLETED' %}
-    <div class="mt-12 bg-indigo-600 rounded-[2.5rem] p-10 flex flex-col md:flex-row items-center justify-between gap-8 shadow-2xl relative overflow-hidden transition-all hover:scale-[1.01]">
-        <div class="absolute top-0 right-0 -mr-20 -mt-20 w-64 h-64 bg-white/10 rounded-full blur-3xl"></div>
-        <div class="absolute bottom-0 left-0 -ml-10 -mb-10 w-40 h-40 bg-indigo-400/20 rounded-full blur-2xl"></div>
+   {% if scan.status == 'COMPLETED' %}
+    <div class="mt-10 bg-gradient-to-r from-indigo-600 to-blue-700 rounded-2xl p-8 flex flex-col md:flex-row items-center justify-between gap-6 shadow-2xl shadow-indigo-200 relative overflow-hidden">
+        <div class="absolute -right-10 -bottom-10 w-40 h-40 bg-white/10 rounded-full blur-2xl"></div>
         
-        <div class="flex items-center gap-8 relative z-10">
-            <div class="bg-white/10 p-5 rounded-3xl backdrop-blur-2xl border border-white/20 shadow-inner">
-                <svg class="w-10 h-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path></svg>
+        <div class="flex items-center gap-5 relative z-10">
+            <div class="bg-white/20 p-4 rounded-2xl backdrop-blur-md">
+                <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path></svg>
             </div>
             <div>
-                <h3 class="text-3xl font-black text-white tracking-tight">Step 2: Legal Audit</h3>
-                <p class="text-indigo-100/80 text-sm font-medium max-w-md mt-1">Technical analysis is finished. Now complete the procedural questionnaire to generate your final certificate.</p>
+                <h3 class="text-xl font-black text-white">Manual Procedural Audit</h3>
+                <p class="text-indigo-100 text-sm opacity-90">Technical scan passed. Complete the manual questionnaire to finalize legal compliance.</p>
             </div>
         </div>
-        <a href="{% url 'checklists:wizard' scan.scan_id %}" class="relative z-10 bg-white text-indigo-700 px-12 py-5 rounded-2xl font-black hover:shadow-2xl hover:bg-indigo-50 transition-all text-xl shadow-xl flex items-center gap-3">
-            Start Audit 
-            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M13 7l5 5m0 0l-5 5m5-5H6"/></svg>
+        <a href="{% url 'checklists:wizard' scan.id %}" class="relative z-10 bg-white text-indigo-700 px-10 py-4 rounded-xl font-black hover:scale-105 transition-transform shadow-lg text-center whitespace-nowrap">
+            Start Manual Audit →
         </a>
     </div>
     {% endif %}

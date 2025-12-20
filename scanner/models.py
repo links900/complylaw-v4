@@ -32,6 +32,13 @@ class ScanResult(models.Model):
     domain = models.CharField(max_length=255)
     scan_date = models.DateTimeField(auto_now_add=True)
     completed_at = models.DateTimeField(null=True, blank=True)
+    
+    @property
+    def audit_record(self):
+        try:
+            return self.manual_audit
+        except Exception:
+            return None
 
     # Progress
     current_step = models.CharField(max_length=200, blank=True, default="")

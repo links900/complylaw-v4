@@ -47,9 +47,14 @@ class ScanDashboardView(LoginRequiredMixin, ListView):
     context_object_name = 'scans'
     
     def get_queryset(self):
+        #return ScanResult.objects.filter(
+        #    firm=self.request.user.firm
+        #).select_related('firm').order_by('-scan_date')
         return ScanResult.objects.filter(
-            firm=self.request.user.firm
-        ).select_related('firm').order_by('-scan_date')
+            firm=self.request.user.firm
+        ).select_related('firm', 'manual_audit').order_by('-scan_date')
+        
+        
 
 # === SCAN LIST ===
 class ScanListView(FirmRequiredMixin, ListView):
