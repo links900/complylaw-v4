@@ -114,7 +114,7 @@
                 <p class="text-indigo-100 text-sm opacity-90">Technical scan passed. Complete the manual questionnaire to finalize legal compliance.</p>
             </div>
         </div>
-        <a href="{% url 'checklists:wizard' scan.id %}" class="relative z-10 bg-white text-indigo-700 px-10 py-4 rounded-xl font-black hover:scale-105 transition-transform shadow-lg text-center whitespace-nowrap">
+        <a href="{% url 'checklists:wizard' scan.scan_id %}" class="relative z-10 bg-white text-indigo-700 px-10 py-4 rounded-xl font-black hover:scale-105 transition-transform shadow-lg text-center whitespace-nowrap">
             Start Manual Audit →
         </a>
     </div>

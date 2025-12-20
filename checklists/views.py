@@ -39,6 +39,7 @@ class ChecklistWizardView(ListView):
     def get_queryset(self):
         scan_id_str = self.kwargs.get('scan_id')
         scan_obj = get_object_or_404(ScanResult, scan_id=scan_id_str)
+        
 
         # 1. Check if submission exists first to avoid unnecessary transaction noise
         submission = ChecklistSubmission.objects.filter(scan=scan_obj).first()
