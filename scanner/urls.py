@@ -32,7 +32,8 @@ urlpatterns = [
     
     
     
-    path('test-modal/', views.test_modal_view, name='test_modal'),
+    #path('test-modal/', views.test_modal_view, name='test_modal'),
+    path('scan/<int:pk>/checklist-modal/', views.checklist_modal_view, name='checklist_modal'),
     
     
 ]

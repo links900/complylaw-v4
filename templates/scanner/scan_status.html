@@ -48,9 +48,7 @@
                 <a href="{% url 'scanner:scan_list' %}" class="inline-flex items-center px-6 py-3 bg-white text-indigo-600 border border-indigo-100 font-bold rounded-xl hover:bg-indigo-50 transition shadow-sm">
                     ← Back to Scans
                 </a>
-                <button hx-get="{% url 'scanner:test_modal' %}" hx-target="body" hx-swap="beforeend" class="inline-flex items-center px-6 py-3 bg-amber-500 text-white font-bold rounded-xl hover:bg-amber-600 transition shadow-lg">
-                    🛠️ Test Modal
-                </button>
+                
             </div>
             
             <div id="scan-progress" 
@@ -123,13 +121,20 @@
 
                 // 3. Finalization sequence
                 if ((data.type === "complete" || data.progress === 100) && !window.modalTriggered) {
-                    window.modalTriggered = true;
-                    // Wait for DB to catch up with risk score calculation
-                    setTimeout(() => {
-                        document.body.dispatchEvent(new Event('refreshStatus'));
-                        htmx.ajax('GET', "{% url 'scanner:test_modal' %}", { target: 'body', swap: 'beforeend' });
-                    }, 1800);
-                }
+					window.modalTriggered = true;
+					
+					setTimeout(() => {
+						// Refresh the status partial to show Grade/Download buttons
+						document.body.dispatchEvent(new Event('refreshStatus'));
+						
+						// Trigger the checklist modal dynamically for this specific scan
+						const modalUrl = "{% url 'scanner:checklist_modal' scan.id %}";
+						htmx.ajax('GET', modalUrl, { 
+							target: 'body', 
+							swap: 'beforeend' 
+						});
+					}, 1800);
+				}
             };
 
             socket.onopen = () => console.log("Security Socket Connected");

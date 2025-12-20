@@ -31,14 +31,14 @@ from django.utils.timezone import now
 
 
 
-# Temporary view for testing the modal appearance
-def test_modal_view(request):
-    # This ignores the tier check so you can see the design immediately
+def checklist_modal_view(request, pk):
+    # Fetch the actual scan object
+    scan = get_object_or_404(Scan, pk=pk)
+    
     return render(request, 'scanner/partials/checklist_prompt.html', {
-        'scan': {'domain': 'test-domain.com', 'id': 1},
-        'debug_mode': True
+        'scan': scan,
+        'debug_mode': False # Set to False now that it's dynamic
     })
-
 
 def keep_alive(request):
     return HttpResponse("OK")  # Call this every 10min via cron or external ping

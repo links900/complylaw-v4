@@ -8,6 +8,7 @@ app_name = 'checklists'
 urlpatterns = [
     # The main entry point from a scan
     path('wizard/<int:scan_id>/', views.ChecklistWizardView.as_view(), name='wizard'),
+
     
     path('audits/', views.submission_list, name='submission_list'),
     
@@ -31,4 +32,5 @@ urlpatterns = [
     
     # Finalization
     path('complete/<int:submission_id>/', views.complete_audit, name='complete_audit'),
+    
 ]
