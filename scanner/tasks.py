@@ -209,46 +209,48 @@ def run_compliance_scan(self, scan_id):
 
 
 # === HELPER: Safe update (only 4–6 DB writes total!) ===
+# scanner/tasks.py
+
 def _update_scan(scan, progress, step, log_buffer):
     scan.progress = progress
     scan.current_step = step
     scan.save(update_fields=['progress', 'current_step'])
     
-    # Send WebSocket
     try:
         async_to_sync(get_channel_layer().group_send)(
-            f"scan_{scan.id}",
+            f"scan_{scan.scan_id}",  # FIX: Use scan_id (UUID), not id (PK)
             {
-                "type": "scan.update",
+                "type": "scan_update", # FIX: Use underscore to match consumer method
                 "progress": progress,
                 "step": step,
-                "status": "running"
+                "status": "RUNNING"
             }
         )
-    except:
-        pass  # Never crash scan due to WS
-
+    except Exception as e:
+        print(f"WS Error: {e}")
 
 def _send_ws_complete(scan):
     try:
+        # Pushes the 100% update first
         async_to_sync(get_channel_layer().group_send)(
-            f"scan_{scan.id}",
-            {"type": "scan.complete_trigger", "force_reload": True, "progress": 100}
-        )
-        async_to_sync(get_channel_layer().group_send)(
-            f"scan_{scan.id}",
+            f"scan_{scan.scan_id}", # FIX: Use scan_id (UUID)
             {
-                "type": "scan.update",
+                "type": "scan_update",
                 "progress": 100,
-                "message": f"{domain} scan completed!",
+                "step": "Scan Complete!",
+                "status": "COMPLETED",
                 "grade": scan.grade,
-                "risk_score": scan.risk_score,
-                "status": "complete"
-                
+                "risk_score": scan.risk_score
             }
         )
-    except:
-        pass
+        # Triggers the HTMX reload/modal
+        async_to_sync(get_channel_layer().group_send)(
+            f"scan_{scan.scan_id}", # FIX: Use scan_id (UUID)
+            {"type": "scan_complete_trigger"}
+        )
+    except Exception as e:
+        print(f"WS Finalize Error: {e}")
+
 
 
 def generate_recommendations(findings):

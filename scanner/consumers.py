@@ -42,6 +42,7 @@ class ScanProgressConsumer(WebsocketConsumer):
             "type": "complete",
             "force_reload": True,
             "progress": 100,
+            "step": "Finalizing...",
             "grade": event.get("grade"),
             "risk_score": event.get("risk_score")
         }))
