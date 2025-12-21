@@ -53,7 +53,8 @@
             
             <div id="scan-progress" 
                  hx-get="{% url 'scanner:scan_status_partial' scan.scan_id %}" 
-                 hx-trigger="refreshStatus from:body" 
+                 //hx-trigger="refreshStatus from:body" 
+				 hx-trigger="refreshStatus from:body, every 5s [window.modalTriggered == false]"
                  hx-swap="outerHTML">
                 {% include 'scanner/partials/scan_progress.html' %}
             </div>
