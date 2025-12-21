@@ -129,7 +129,7 @@
 						document.body.dispatchEvent(new Event('refreshStatus'));
 						
 						// Trigger the checklist modal dynamically for this specific scan
-						const modalUrl = "{% url 'scanner:checklist_modal' scan.id %}";
+						const modalUrl = "{% url 'scanner:checklist_modal' scan.scan_id %}";
 						htmx.ajax('GET', modalUrl, { 
 							target: 'body', 
 							swap: 'beforeend' 
